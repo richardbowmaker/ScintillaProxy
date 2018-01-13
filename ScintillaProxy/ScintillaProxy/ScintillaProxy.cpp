@@ -142,6 +142,12 @@ void ScnDestroyEditor(HWND scintilla)
 
 LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	if (Msg == SCI_SETTEXT)
+	{
+		char* p = (char*)lParam;
+		int n = 0;
+	}
+
 	LRESULT res = -1;
 	EditorsT::iterator it = editors.find(scintilla);
 
@@ -155,7 +161,9 @@ LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT SendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	return ScnSendEditor(scintilla, Msg, wParam, lParam);
+
+	return 0;
+	//return ScnSendEditor(scintilla, Msg, wParam, lParam);
 }
 
 BOOL ScnEnableEvents(HWND scintilla, void* callback)
