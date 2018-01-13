@@ -170,7 +170,7 @@ BOOL ScnEnableEvents(HWND scintilla, void* callback)
 		// add windows hook if this is the first event handler
 		if (NoOfEventHandlers == 0)
 		{
-			winHook = SetWindowsHookEx(WH_CALLWNDPROC, &WndProcHook, 0, ::GetCurrentThreadId());
+			winHook = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
 		}
 		if (winHook != 0)
 		{
@@ -204,24 +204,25 @@ void ScnDisableEvents(HWND scintilla)
 	}
 }
 
-LRESULT WINAPI WndProcHook(int nCode, WPARAM wParam, LPARAM lParam)
+LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if (nCode < 0)
 	{
 		return CallNextHookEx(winHook, nCode, wParam, lParam);
 	}
 
-	LPCWPSTRUCT pData = reinterpret_cast<LPCWPSTRUCT>(lParam);
+	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
 
 	if (pData->message == WM_NOTIFY)
 	{
 		LPNMHDR lpnmhdr = (LPNMHDR)pData->lParam;
 
-		// is the notification from a scintilla editor window
+		// is the notification from a scintilla editor window ?
 		EditorsT::iterator it = editors.find(lpnmhdr->hwndFrom);
 
 		if (it != editors.end())
 		{
+			// pass notification onto to event handler
 			SEditorPtrT pe = it->second;
 			SCNotification* scn = (SCNotification*)pData->lParam;
 
@@ -229,6 +230,19 @@ LRESULT WINAPI WndProcHook(int nCode, WPARAM wParam, LPARAM lParam)
 			if (pe->m_notify != NULL)
 			{
 				(pe->m_notify)(scn);
+			}
+		}
+	}
+	else if (pData->message == WM_SIZE)
+	{
+		// resize scintilla editor after its parent has been resized
+		for (EditorsT::const_iterator it = editors.begin(); it != editors.end(); ++it)
+		{
+			if (it->second->m_parent == pData->hwnd)
+			{
+				int w = (pData->lParam) & 0x0ffff;
+				int h = (pData->lParam) >> 16;
+				::MoveWindow(it->second->m_scintilla, 0, 0, w, h, TRUE);
 			}
 		}
 	}
