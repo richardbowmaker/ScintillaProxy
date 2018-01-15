@@ -22,7 +22,7 @@ const COLORREF white = RGB(0xff, 0xff, 0xff);
 
 // pointer to haskell event handler
 typedef void* (*EventHandlerT)(SCNotification*);
-typedef int(__cdecl *ScintillaDirect)(void*, int, int, int);
+typedef int(__cdecl *ScintillaDirect)(void*, int, __int64, unsigned __int64);
 
 // foir each attached scintilla editor window
 class SEditor
@@ -97,8 +97,6 @@ HWND ScnNewEditor(HWND parent)
 
 	if (scintilla != 0)
 	{
-//		ConfigureEditor();
-
 		::ShowWindow(scintilla, SW_SHOW);
 
 		SEditorPtrT pe = SEditorPtrT(new SEditor);
@@ -137,12 +135,14 @@ void ScnDestroyEditor(HWND scintilla)
 
 		//????? To do
 
+		
+
 	}
 }
 
 LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (Msg == SCI_SETTEXT)
+	if (Msg == SCI_SETLEXER)
 	{
 		char* p = (char*)lParam;
 		int n = 0;
@@ -161,9 +161,7 @@ LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT SendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-
-	return 0;
-	//return ScnSendEditor(scintilla, Msg, wParam, lParam);
+	return ScnSendEditor(scintilla, Msg, wParam, lParam);
 }
 
 BOOL ScnEnableEvents(HWND scintilla, void* callback)
@@ -260,7 +258,7 @@ LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 void ConfigureEditor(HWND scintilla)
 {
 	SendEditor(scintilla, SCI_SETLEXER, SCLEX_HTML);
-	SendEditor(scintilla, SCI_SETSTYLEBITS, 7);
+//	SendEditor(scintilla, SCI_SETSTYLEBITS, 7);
 
 	const TCHAR keyWords[] =
 		_T("break case catch continue default ")
@@ -270,7 +268,8 @@ void ConfigureEditor(HWND scintilla)
 		reinterpret_cast<LPARAM>(keyWords));
 
 	// Set up the global default style. These attributes are used wherever no explicit choices are made.
-	SetAStyle(scintilla, STYLE_DEFAULT, black, white, 9, _T("Consolas"));
+	char* p = "Comic Sans MS";
+	SetAStyle(scintilla, STYLE_DEFAULT, black, white, 12, p);
 	SendEditor(scintilla, SCI_STYLECLEARALL);	// Copies global style to all others
 
 	const COLORREF red = RGB(0xFF, 0, 0);
@@ -279,76 +278,76 @@ void ConfigureEditor(HWND scintilla)
 	const COLORREF darkBlue = RGB(0, 0, 0x80);
 
 	// Hypertext default is used for all the document's text
-	SetAStyle(scintilla, SCE_H_DEFAULT, black, white, 9, _T("Consolas"));
+	//SetAStyle(scintilla, SCE_H_DEFAULT, black, white, 12, "Comic Sans MS");
 
-	// Unknown tags and attributes are highlighed in red. 
-	// If a tag is actually OK, it should be added in lower case to the htmlKeyWords string.
-	SetAStyle(scintilla, SCE_H_TAG, darkBlue);
-	SetAStyle(scintilla, SCE_H_TAGUNKNOWN, red);
-	SetAStyle(scintilla, SCE_H_ATTRIBUTE, darkBlue);
-	SetAStyle(scintilla, SCE_H_ATTRIBUTEUNKNOWN, red);
-	SetAStyle(scintilla, SCE_H_NUMBER, RGB(0x80, 0, 0x80));
-	SetAStyle(scintilla, SCE_H_DOUBLESTRING, RGB(0, 0x80, 0));
-	SetAStyle(scintilla, SCE_H_SINGLESTRING, RGB(0, 0x80, 0));
-	SetAStyle(scintilla, SCE_H_OTHER, RGB(0x80, 0, 0x80));
-	SetAStyle(scintilla, SCE_H_COMMENT, RGB(0x80, 0x80, 0));
-	SetAStyle(scintilla, SCE_H_ENTITY, RGB(0x80, 0, 0x80));
+	//// Unknown tags and attributes are highlighed in red. 
+	//// If a tag is actually OK, it should be added in lower case to the htmlKeyWords string.
+	//SetAStyle(scintilla, SCE_H_TAG, darkBlue);
+	//SetAStyle(scintilla, SCE_H_TAGUNKNOWN, red);
+	//SetAStyle(scintilla, SCE_H_ATTRIBUTE, darkBlue);
+	//SetAStyle(scintilla, SCE_H_ATTRIBUTEUNKNOWN, red);
+	//SetAStyle(scintilla, SCE_H_NUMBER, RGB(0x80, 0, 0x80));
+	//SetAStyle(scintilla, SCE_H_DOUBLESTRING, RGB(0, 0x80, 0));
+	//SetAStyle(scintilla, SCE_H_SINGLESTRING, RGB(0, 0x80, 0));
+	//SetAStyle(scintilla, SCE_H_OTHER, RGB(0x80, 0, 0x80));
+	//SetAStyle(scintilla, SCE_H_COMMENT, RGB(0x80, 0x80, 0));
+	//SetAStyle(scintilla, SCE_H_ENTITY, RGB(0x80, 0, 0x80));
 
-	SetAStyle(scintilla, SCE_H_TAGEND, darkBlue);
-	SetAStyle(scintilla, SCE_H_XMLSTART, darkBlue);	// <?
-	SetAStyle(scintilla, SCE_H_XMLEND, darkBlue);		// ?>
-	SetAStyle(scintilla, SCE_H_SCRIPT, darkBlue);		// <script
-	SetAStyle(scintilla, SCE_H_ASP, RGB(0x4F, 0x4F, 0), RGB(0xFF, 0xFF, 0));	// <% ... %>
-	SetAStyle(scintilla, SCE_H_ASPAT, RGB(0x4F, 0x4F, 0), RGB(0xFF, 0xFF, 0));	// <%@ ... %>
+	//SetAStyle(scintilla, SCE_H_TAGEND, darkBlue);
+	//SetAStyle(scintilla, SCE_H_XMLSTART, darkBlue);	// <?
+	//SetAStyle(scintilla, SCE_H_XMLEND, darkBlue);		// ?>
+	//SetAStyle(scintilla, SCE_H_SCRIPT, darkBlue);		// <script
+	//SetAStyle(scintilla, SCE_H_ASP, RGB(0x4F, 0x4F, 0), RGB(0xFF, 0xFF, 0));	// <% ... %>
+	//SetAStyle(scintilla, SCE_H_ASPAT, RGB(0x4F, 0x4F, 0), RGB(0xFF, 0xFF, 0));	// <%@ ... %>
 
-	SetAStyle(scintilla, SCE_HB_DEFAULT, black);
-	SetAStyle(scintilla, SCE_HB_COMMENTLINE, darkGreen);
-	SetAStyle(scintilla, SCE_HB_NUMBER, RGB(0, 0x80, 0x80));
-	SetAStyle(scintilla, SCE_HB_WORD, darkBlue);
-	SendEditor(scintilla, SCI_STYLESETBOLD, SCE_HB_WORD, 1);
-	SetAStyle(scintilla, SCE_HB_STRING, RGB(0x80, 0, 0x80));
-	SetAStyle(scintilla, SCE_HB_IDENTIFIER, black);
+	//SetAStyle(scintilla, SCE_HB_DEFAULT, black);
+	//SetAStyle(scintilla, SCE_HB_COMMENTLINE, darkGreen);
+	//SetAStyle(scintilla, SCE_HB_NUMBER, RGB(0, 0x80, 0x80));
+	//SetAStyle(scintilla, SCE_HB_WORD, darkBlue);
+	//SendEditor(scintilla, SCI_STYLESETBOLD, SCE_HB_WORD, 1);
+	//SetAStyle(scintilla, SCE_HB_STRING, RGB(0x80, 0, 0x80));
+	//SetAStyle(scintilla, SCE_HB_IDENTIFIER, black);
 
-	// This light blue is found in the windows system palette so is safe to use even in 256 colour modes.
-	const COLORREF lightBlue = RGB(0xA6, 0xCA, 0xF0);
-	// Show the whole section of VBScript with light blue background
-	for (int bstyle = SCE_HB_DEFAULT; bstyle <= SCE_HB_STRINGEOL; bstyle++)
-	{
-		SendEditor(scintilla, SCI_STYLESETFONT, bstyle,
-			reinterpret_cast<LPARAM>("Georgia"));
-		SendEditor(scintilla, SCI_STYLESETBACK, bstyle, lightBlue);
-		// This call extends the backround colour of the last style on the line to the edge of the window
-		SendEditor(scintilla, SCI_STYLESETEOLFILLED, bstyle, 1);
-	}
-	SendEditor(scintilla, SCI_STYLESETBACK, SCE_HB_STRINGEOL, RGB(0x7F, 0x7F, 0xFF));
-	SendEditor(scintilla, SCI_STYLESETFONT, SCE_HB_COMMENTLINE,
-		reinterpret_cast<LPARAM>("Comic Sans MS"));
+	//// This light blue is found in the windows system palette so is safe to use even in 256 colour modes.
+	//const COLORREF lightBlue = RGB(0xA6, 0xCA, 0xF0);
+	//// Show the whole section of VBScript with light blue background
+	//for (int bstyle = SCE_HB_DEFAULT; bstyle <= SCE_HB_STRINGEOL; bstyle++)
+	//{
+	//	SendEditor(scintilla, SCI_STYLESETFONT, bstyle,
+	//		reinterpret_cast<LPARAM>("Georgia"));
+	//	SendEditor(scintilla, SCI_STYLESETBACK, bstyle, lightBlue);
+	//	// This call extends the backround colour of the last style on the line to the edge of the window
+	//	SendEditor(scintilla, SCI_STYLESETEOLFILLED, bstyle, 1);
+	//}
+	//SendEditor(scintilla, SCI_STYLESETBACK, SCE_HB_STRINGEOL, RGB(0x7F, 0x7F, 0xFF));
+	//SendEditor(scintilla, SCI_STYLESETFONT, SCE_HB_COMMENTLINE,
+	//	reinterpret_cast<LPARAM>("Comic Sans MS"));
 
-	SetAStyle(scintilla, SCE_HBA_DEFAULT, black);
-	SetAStyle(scintilla, SCE_HBA_COMMENTLINE, darkGreen);
-	SetAStyle(scintilla, SCE_HBA_NUMBER, RGB(0, 0x80, 0x80));
-	SetAStyle(scintilla, SCE_HBA_WORD, darkBlue);
-	SendEditor(scintilla, SCI_STYLESETBOLD, SCE_HBA_WORD, 1);
-	SetAStyle(scintilla, SCE_HBA_STRING, RGB(0x80, 0, 0x80));
-	SetAStyle(scintilla, SCE_HBA_IDENTIFIER, black);
+	//SetAStyle(scintilla, SCE_HBA_DEFAULT, black);
+	//SetAStyle(scintilla, SCE_HBA_COMMENTLINE, darkGreen);
+	//SetAStyle(scintilla, SCE_HBA_NUMBER, RGB(0, 0x80, 0x80));
+	//SetAStyle(scintilla, SCE_HBA_WORD, darkBlue);
+	//SendEditor(scintilla, SCI_STYLESETBOLD, SCE_HBA_WORD, 1);
+	//SetAStyle(scintilla, SCE_HBA_STRING, RGB(0x80, 0, 0x80));
+	//SetAStyle(scintilla, SCE_HBA_IDENTIFIER, black);
 
-	// Show the whole section of ASP VBScript with bright yellow background
-	for (int bastyle = SCE_HBA_DEFAULT; bastyle <= SCE_HBA_STRINGEOL; bastyle++)
-	{
-		SendEditor(scintilla, SCI_STYLESETFONT, bastyle,
-			reinterpret_cast<LPARAM>("Georgia"));
-		SendEditor(scintilla, SCI_STYLESETBACK, bastyle, RGB(0xFF, 0xFF, 0));
-		// This call extends the backround colour of the last style on the line to the edge of the window
-		SendEditor(scintilla, SCI_STYLESETEOLFILLED, bastyle, 1);
-	}
-	SendEditor(scintilla, SCI_STYLESETBACK, SCE_HBA_STRINGEOL, RGB(0xCF, 0xCF, 0x7F));
-	SendEditor(scintilla, SCI_STYLESETFONT, SCE_HBA_COMMENTLINE,
-		reinterpret_cast<LPARAM>("Comic Sans MS"));
+	//// Show the whole section of ASP VBScript with bright yellow background
+	//for (int bastyle = SCE_HBA_DEFAULT; bastyle <= SCE_HBA_STRINGEOL; bastyle++)
+	//{
+	//	SendEditor(scintilla, SCI_STYLESETFONT, bastyle,
+	//		reinterpret_cast<LPARAM>("Georgia"));
+	//	SendEditor(scintilla, SCI_STYLESETBACK, bastyle, RGB(0xFF, 0xFF, 0));
+	//	// This call extends the backround colour of the last style on the line to the edge of the window
+	//	SendEditor(scintilla, SCI_STYLESETEOLFILLED, bastyle, 1);
+	//}
+	//SendEditor(scintilla, SCI_STYLESETBACK, SCE_HBA_STRINGEOL, RGB(0xCF, 0xCF, 0x7F));
+	//SendEditor(scintilla, SCI_STYLESETFONT, SCE_HBA_COMMENTLINE,
+	//	reinterpret_cast<LPARAM>("Comic Sans MS"));
 
 
 }
 
-void SetAStyle(HWND scintilla, int style, COLORREF fore, COLORREF back, int size, const TCHAR *face)
+void SetAStyle(HWND scintilla, int style, COLORREF fore, COLORREF back, int size, const char *face)
 {
 	SendEditor(scintilla, SCI_STYLESETFORE, style, fore);
 	SendEditor(scintilla, SCI_STYLESETBACK, style, back);

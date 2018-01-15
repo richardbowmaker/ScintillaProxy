@@ -26,6 +26,6 @@ void Initialise();
 void Uninitialise();
 LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 void ConfigureEditor(HWND scintilla);
-void SetAStyle(HWND scintilla, int style, COLORREF fore, COLORREF back = RGB(255, 255, 255), int size = -1, const TCHAR *face = 0);
+void SetAStyle(HWND scintilla, int style, COLORREF fore, COLORREF back = RGB(255, 255, 255), int size = -1, const char *face = 0);
 LRESULT SendEditor(HWND scintilla, UINT Msg, WPARAM wParam = 0, LPARAM lParam = 0);
 
