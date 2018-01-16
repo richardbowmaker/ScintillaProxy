@@ -22,7 +22,7 @@ const COLORREF white = RGB(0xff, 0xff, 0xff);
 
 // pointer to haskell event handler
 typedef void* (*EventHandlerT)(SCNotification*);
-typedef int(__cdecl *ScintillaDirect)(void*, int, __int64, unsigned __int64);
+typedef unsigned __int64(__cdecl *ScintillaDirect)(void*, int, __int64, unsigned __int64);
 
 // foir each attached scintilla editor window
 class SEditor
@@ -116,6 +116,8 @@ HWND ScnNewEditor(HWND parent)
 		editors.insert(std::make_pair(scintilla, pe));
 
 		OutputDebugString(_T("::CreateWindow OK, Scintilla editor\n"));
+
+//		ConfigureEditorHaskell(scintilla);
 	}
 	else
 	{
@@ -254,6 +256,59 @@ LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 	}
 	return CallNextHookEx(winHook, nCode, wParam, lParam);
 }
+
+void ConfigureEditorHaskell(HWND scintilla)
+{
+	const COLORREF red = RGB(0xFF, 0, 0);
+	const COLORREF offWhite = RGB(0xFF, 0xFB, 0xF0);
+	const COLORREF darkGreen = RGB(0, 0x80, 0);
+	const COLORREF darkBlue = RGB(0, 0, 0x80);
+	const COLORREF lightBlue = RGB(0xA6, 0xCA, 0xF0);
+	const COLORREF keyBlue = RGB(0x20, 0x50, 0xF0);
+	const COLORREF stringBrown = RGB(0xA0, 0x10, 0x20);
+
+	SendEditor(scintilla, SCI_SETLEXER, SCLEX_HASKELL);
+//	SendEditor(SCI_SETSTYLEBITS, 7);
+
+	const char keyWords[] = "do if else return then case import as qualified";
+
+	SendEditor(scintilla, SCI_SETKEYWORDS, 0,
+		reinterpret_cast<LPARAM>(keyWords));
+
+	// Set up the global default style. These attributes are used wherever no explicit choices are made.
+	SetAStyle(scintilla, STYLE_DEFAULT, stringBrown, white, 9, "Courier New");
+	SendEditor(scintilla, SCI_STYLECLEARALL);	// Copies global style to all others
+
+									// Hypertext default is used for all the document's text
+	SetAStyle(scintilla, SCE_H_DEFAULT, stringBrown, white, 9, "Courier New");
+
+
+
+	SetAStyle(scintilla, SCE_HA_DEFAULT, black);
+	SetAStyle(scintilla, SCE_HA_IDENTIFIER, black);
+	SetAStyle(scintilla, SCE_HA_KEYWORD, keyBlue);
+	SetAStyle(scintilla, SCE_HA_NUMBER, black);
+	SetAStyle(scintilla, SCE_HA_STRING, stringBrown);
+	SetAStyle(scintilla, SCE_HA_CHARACTER, black);
+	SetAStyle(scintilla, SCE_HA_CLASS, black);
+	SetAStyle(scintilla, SCE_HA_MODULE, black);
+	SetAStyle(scintilla, SCE_HA_CAPITAL, black);
+	SetAStyle(scintilla, SCE_HA_DATA, black);
+	SetAStyle(scintilla, SCE_HA_IMPORT, keyBlue);
+	SetAStyle(scintilla, SCE_HA_OPERATOR, black);
+	SetAStyle(scintilla, SCE_HA_INSTANCE, black);
+	SetAStyle(scintilla, SCE_HA_COMMENTLINE, darkGreen);
+	SetAStyle(scintilla, SCE_HA_COMMENTBLOCK, darkGreen);
+	SetAStyle(scintilla, SCE_HA_COMMENTBLOCK2, darkGreen);
+	SetAStyle(scintilla, SCE_HA_COMMENTBLOCK3, darkGreen);
+	SetAStyle(scintilla, SCE_HA_PRAGMA, black);
+	SetAStyle(scintilla, SCE_HA_PREPROCESSOR, black);
+	SetAStyle(scintilla, SCE_HA_STRINGEOL, black);
+	SetAStyle(scintilla, SCE_HA_RESERVED_OPERATOR, black);
+	SetAStyle(scintilla, SCE_HA_LITERATE_COMMENT, black);
+	SetAStyle(scintilla, SCE_HA_LITERATE_CODEDELIM, black);
+}
+
 
 void ConfigureEditor(HWND scintilla)
 {
