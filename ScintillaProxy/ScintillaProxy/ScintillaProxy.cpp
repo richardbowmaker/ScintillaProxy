@@ -134,11 +134,7 @@ void ScnDestroyEditor(HWND scintilla)
 	if (it != editors.end())
 	{
 		SEditorPtrT pe = it->second;
-
-		//????? To do
-
-		
-
+		::DestroyWindow(pe->m_scintilla);
 	}
 }
 
