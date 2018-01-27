@@ -17,7 +17,8 @@ extern "C"
 	SCINTILLAPROXY_API HWND __cdecl ScnNewEditor(HWND parent);
 	SCINTILLAPROXY_API void __cdecl ScnDestroyEditor(HWND scintilla);
 	SCINTILLAPROXY_API LRESULT __cdecl ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam);
-	SCINTILLAPROXY_API BOOL __cdecl ScnEnableEvents(HWND scintilla, void* callback);
+	SCINTILLAPROXY_API void __cdecl ScnSetEventHandler(HWND scintilla, void* callback);
+	SCINTILLAPROXY_API BOOL __cdecl ScnEnableEvents(HWND scintilla);
 	SCINTILLAPROXY_API void __cdecl ScnDisableEvents(HWND scintilla);
 }
 

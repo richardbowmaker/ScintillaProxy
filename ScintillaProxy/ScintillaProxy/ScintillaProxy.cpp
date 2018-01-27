@@ -29,15 +29,21 @@ class SEditor
 {
 public:
 
-	SEditor() : m_scintilla(0), m_parent(0), m_notify(NULL) {}
+	SEditor() : 
+		m_scintilla(0), 
+		m_parent(0), 
+		m_notify(NULL), 
+		m_eventsEnabled(false),
+		m_sptr(NULL) {}
 
-	HWND	m_scintilla;	// HWND for scintilla editor
-	HWND	m_parent;		// HWND for onwer window
-	EventHandlerT m_notify;
+	HWND			m_scintilla;	// HWND for scintilla editor
+	HWND			m_parent;		// HWND for onwer window
+	EventHandlerT	m_notify;
+	bool			m_eventsEnabled;
 
 	// pointer to scintilla direct function
-	ScintillaDirect direct;
-	void * sptr;
+	ScintillaDirect m_direct;
+	void * m_sptr;
 
 };
 
@@ -45,14 +51,12 @@ typedef std::shared_ptr<SEditor> SEditorPtrT;
 typedef std::map<HWND, SEditorPtrT> EditorsT;
 
 EditorsT	editors;				// active editord
-int			NoOfEventHandlers;		// no. of haskell clients requesting events
 HHOOK		winHook;				// the windows hook to capture scintilla WM_NOTIFY messages
 
 // Initialise the DLL
 void Initialise()
 {
 	editors.clear();
-	NoOfEventHandlers = 0;
 	winHook = 0;
 
 	HMODULE hLib = ::LoadLibrary(_T("SciLexer64.DLL"));
@@ -76,7 +80,6 @@ void Uninitialise()
 	}
 
 	editors.clear();
-	NoOfEventHandlers = 0;
 }
 
 // start a new scintilla editor window
@@ -102,16 +105,21 @@ HWND ScnNewEditor(HWND parent)
 		SEditorPtrT pe = SEditorPtrT(new SEditor);
 		pe->m_parent = parent;
 		pe->m_scintilla = scintilla;
-		pe->m_notify = NULL;
 
 		// get pointer to scintilla direct function
-		pe->direct = (ScintillaDirect)SendMessage(scintilla, SCI_GETDIRECTFUNCTION, 0, 0);
-		pe->sptr = (void *)SendMessage(scintilla, SCI_GETDIRECTPOINTER, 0, 0);
+		pe->m_direct = (ScintillaDirect)SendMessage(scintilla, SCI_GETDIRECTFUNCTION, 0, 0);
+		pe->m_sptr = (void *)SendMessage(scintilla, SCI_GETDIRECTPOINTER, 0, 0);
 
 		// set size of editor to fill parent window
 		RECT r;
 		::GetWindowRect(parent, &r);
 		::SetWindowPos(scintilla, parent, 0, 0, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+
+		// add windows hook if this is the first editor
+		if (winHook == 0)
+		{
+			winHook = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
+		}
 
 		editors.insert(std::make_pair(scintilla, pe));
 
@@ -136,6 +144,13 @@ void ScnDestroyEditor(HWND scintilla)
 		SEditorPtrT pe = it->second;
 		::DestroyWindow(pe->m_scintilla);
 	}
+
+	// if no editors then unhook
+	if (editors.size() == 0)
+	{
+		::UnhookWindowsHookEx(winHook);
+		winHook = 0;
+	}
 }
 
 LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -152,37 +167,41 @@ LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 	if (it != editors.end())
 	{
 		SEditorPtrT pe = it->second;
-		res = pe->direct(pe->sptr, Msg, wParam, lParam);
+		res = pe->m_direct(pe->m_sptr, Msg, wParam, lParam);
 	}
 	return res;
 }
 
-LRESULT SendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
+void ScnSetEventHandler(HWND scintilla, void* callback)
 {
-	return ScnSendEditor(scintilla, Msg, wParam, lParam);
-}
-
-BOOL ScnEnableEvents(HWND scintilla, void* callback)
-{
-	BOOL res = FALSE;
 	EditorsT::iterator it = editors.find(scintilla);
 
 	if (it != editors.end())
 	{
 		SEditorPtrT pe = it->second;
 
-		// add windows hook if this is the first event handler
-		if (NoOfEventHandlers == 0)
+		if (callback == 0)
 		{
-			winHook = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
+			// to be safe
+			pe->m_eventsEnabled = false;
 		}
-		if (winHook != 0)
-		{
-			NoOfEventHandlers++;
-			pe->m_notify = (EventHandlerT)callback;
-			res = TRUE;
+		pe->m_notify = (EventHandlerT)callback;
+	}
+}
 
-			OutputDebugString(_T("Windows hook setup ok\n"));
+BOOL ScnEnableEvents(HWND scintilla)
+{
+	EditorsT::iterator it = editors.find(scintilla);
+	BOOL res = FALSE;
+
+	if (it != editors.end())
+	{
+		SEditorPtrT pe = it->second;
+
+		if (pe->m_notify != NULL)
+		{
+			pe->m_eventsEnabled = true;
+			res = TRUE;
 		}
 	}
 	return res;
@@ -195,17 +214,15 @@ void ScnDisableEvents(HWND scintilla)
 	if (it != editors.end())
 	{
 		SEditorPtrT pe = it->second;
-		pe->m_notify = 0;
-
-		NoOfEventHandlers--;
-
-		// release windows hook if this is the first event handler
-		if (NoOfEventHandlers <= 0)
-		{
-			::UnhookWindowsHookEx(winHook);
-			winHook = 0;
-		}
+		pe->m_eventsEnabled = false;
 	}
+}
+
+// ==============================================
+
+LRESULT SendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	return ScnSendEditor(scintilla, Msg, wParam, lParam);
 }
 
 LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
