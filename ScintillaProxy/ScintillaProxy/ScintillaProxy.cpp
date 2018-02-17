@@ -113,7 +113,7 @@ HWND ScnNewEditor(HWND parent)
 		// set size of editor to fill parent window
 		RECT r;
 		::GetWindowRect(parent, &r);
-		::SetWindowPos(scintilla, parent, 0, 0, r.right - r.left, r.bottom - r.top, SWP_SHOWWINDOW);
+		::MoveWindow(scintilla, 0, 0, r.right - r.left, r.bottom - r.top, TRUE);
 
 		// add windows hook if this is the first editor
 		if (winHook == 0)
@@ -142,6 +142,7 @@ void ScnDestroyEditor(HWND scintilla)
 	if (it != editors.end())
 	{
 		SEditorPtrT pe = it->second;
+		::CloseWindow(pe->m_scintilla);
 		::DestroyWindow(pe->m_scintilla);
 	}
 
@@ -155,9 +156,9 @@ void ScnDestroyEditor(HWND scintilla)
 
 LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (Msg == SCI_SETLEXER)
-	{
-		char* p = (char*)lParam;
+	Sci_TextRange * p = (Sci_TextRange *)lParam;
+	if (Msg == SCI_GETTEXTRANGE)
+	{		
 		int n = 0;
 	}
 
