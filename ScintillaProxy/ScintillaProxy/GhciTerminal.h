@@ -36,23 +36,25 @@ public:
 	HWND GetHwnd() const;
 	HWND GetParentHwnd() const;
 	int GetNoOfChars();
+	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
 	void ReadAndHandleOutput();
 
-	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
-
 private:
 
-	void HandleKeyPress(WPARAM wParam, LPARAM lParam);
 	void SendCommand(StringT text);
-	void UpdateCommandLine();
+	void UpdateCommandLine(StringT text);
+	StringT GetCommandLine();
+	void SetCommandLineFromList();
 	void ShowLookup();
 	void HideLookup();
+	void ToggleLookup();
 	bool StringStartsWith(StringT str, StringT start);
 	StringT StringRemoveAt(StringT str, unsigned int start, unsigned int len = 1);
 	StringT ToStringT(char* p);
+	StringT ToStringT(wchar_t* p);
 	std::string ToChar(StringT& s);
 
 	HWND m_hwnd;
@@ -60,17 +62,14 @@ private:
 	HWND m_hwndLookup;
 	HMODULE m_hdll;
 	int m_noOfChars;	// no. of chars displayed excluding current command being typed by user
-				        // prevents backspacing before start of new line
-
-	StringT m_cmdLine;
+						// prevents backspacing before start of new line
 	StringsT m_cmdHistory;
 	int m_hix;
 
-//--------------------
+	//--------------------
 
-	void StartCommand(char* file);
-	void PrepAndLaunchRedirectedChild(char* file,
-		HANDLE hChildStdOut,
+	void StartCommand();
+	void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
 		HANDLE hChildStdIn,
 		HANDLE hChildStdErr);
 

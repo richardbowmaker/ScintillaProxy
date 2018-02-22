@@ -1,12 +1,12 @@
 #include "stdafx.h"
-
-#include <algorithm>
-#include <Commctrl.h>
-#include <stdio.h> 
-#include <string>
+#include<windows.h>
 #include <tchar.h>
-#include <windows.h>
+#include <stdio.h> 
+#include <Commctrl.h>
+#include <algorithm>
+#include <string>
 
+//#pragma comment(lib, "User32.lib")
 #include "GhciTerminal.h"
 
 // rich text edit control, subclass win proc
@@ -16,24 +16,7 @@ LRESULT CALLBACK RichTextBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
 	CGhciTerminal* p = reinterpret_cast<CGhciTerminal*>(dwRefData);
 	if (p)
 	{
-		bool b = p->RichTextBoxProc(hWnd, uMsg, wParam, lParam);
-		if (b)
-		{
-			return DefSubclassProc(hWnd, uMsg, wParam, lParam);
-		}
-	}
-	return 0;
-}
-
-// list box control, subclass win proc
-LRESULT CALLBACK ListBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
-	LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
-{
-	CGhciTerminal* p = reinterpret_cast<CGhciTerminal*>(dwRefData);
-	if (p)
-	{
-		bool b = p->ListBoxProc(uMsg, wParam, lParam);
-		if (b)
+		if (!p->RichTextBoxProc(hWnd, uMsg, wParam, lParam))
 		{
 			return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 		}
@@ -66,10 +49,10 @@ bool CGhciTerminal::Initialise(HWND hParent, char* file)
 	if (m_hdll)
 	{
 		m_hwnd = ::CreateWindowExW(0, MSFTEDIT_CLASS, L"",
-			ES_MULTILINE | ES_READONLY | WS_HSCROLL  | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP,
+			ES_MULTILINE | WS_HSCROLL | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_TABSTOP,
 			0, 0, 0, 0, hParent, NULL, NULL, NULL);
 
-		if (m_hwnd) 
+		if (m_hwnd)
 		{
 			RECT r;
 			::GetClientRect(hParent, &r);
@@ -85,7 +68,7 @@ bool CGhciTerminal::Initialise(HWND hParent, char* file)
 			// subclass the rich edit text control
 			::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
 
-			StartCommand(file);
+			StartCommand();
 			return true;
 		}
 	}
@@ -111,56 +94,12 @@ void CGhciTerminal::Uninitialise()
 	m_cmdHistory.clear();
 }
 
-void CGhciTerminal::ShowLookup()
-{
-	if (m_hwndLookup == NULL)
-	{
-		m_hwndLookup = CreateWindowExW(0, L"ListBox", 
-			NULL, WS_CHILD | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE, 
-			0, 0, 0, 0, m_hwnd, NULL, NULL, NULL);
-
-		RECT r;
-		::GetClientRect(m_hwnd, &r);
-		::MoveWindow(m_hwndLookup, (r.right - r.left) / 2, 0, (r.right - r.left) / 2, (r.bottom - r.top) / 2, TRUE);
-
-		int ndx = GetWindowTextLength(m_hwnd);
-		::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)m_noOfChars, (LPARAM)ndx);
-
-		// fill list box with command history filtered on starting with current command line
-		if (ndx > m_noOfChars)
-		{
-			StringT s1 = m_cmdLine;
-			std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
-
-			for (StringsT::const_iterator it = m_cmdHistory.begin(); it != m_cmdHistory.end(); ++it)
-			{
-				StringT s2 = *it;
-				std::transform(s2.begin(), s2.end(), s2.begin(), ::toupper);
-				s2 = s2.substr(0, s1.size());
-				if (s1 == s2)
-				{
-					int ix = (int)::SendMessage(m_hwndLookup, LB_ADDSTRING, 0, (LPARAM)it->c_str());
-					::SendMessage(m_hwndLookup, LB_SETITEMDATA, ix, (LPARAM)it->c_str());
-				}
-			}
-		}
-		::SetWindowSubclass(m_hwndLookup, ListBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
-	}
-}
-
-void CGhciTerminal::HideLookup()
-{
-	if (m_hwndLookup)
-	{
-		::CloseWindow(m_hwndLookup);
-		::DestroyWindow(m_hwndLookup);
-		m_hwndLookup = NULL;
-	}
-}
 
 void CGhciTerminal::ClearText()
 {
-	SetText(_T(""));
+	int ndx = GetWindowTextLength(m_hwnd);
+	::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)0, (LPARAM)ndx);
+	::SendMessage(m_hwnd, EM_REPLACESEL, 0, (LPARAM)_T(""));
 	m_noOfChars = 0;
 }
 
@@ -205,83 +144,32 @@ void CGhciTerminal::AddTextTS(StringT text)
 	::SendMessage(m_hwnd, TW_ADDTEXT, 0, reinterpret_cast<LPARAM>(p));
 }
 
-void CGhciTerminal::HandleKeyPress(WPARAM wParam, LPARAM lParam)
+CGhciTerminal::StringT CGhciTerminal::GetCommandLine()
 {
-	_charrange pos;
-	BOOL b = (BOOL)::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
-
-	// only allowed to backspace to last output position
-	if (wParam == 0x08)
+	int n = GetWindowTextLength(m_hwnd);
+	if (n > m_noOfChars)
 	{
-		unsigned int lix = pos.cpMin - m_noOfChars - 1;
-
-		if (lix >= 0 && lix < m_cmdLine.size())
-		{
-			m_cmdLine = StringRemoveAt(m_cmdLine, lix);
-			UpdateCommandLine();
-			::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)pos.cpMin - 1, (LPARAM)pos.cpMin - 1);
-		}
+		_textrange tr;
+		wchar_t buff[1000];
+		tr.chrg.cpMin = m_noOfChars;
+		tr.chrg.cpMax = n;
+		tr.lpstrText = (char*)buff;
+		::SendMessage(m_hwnd, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
+		StringT cmd = buff;
+		StringT::iterator it = std::remove_if(cmd.begin(), cmd.end(), [=](TCHAR& c) -> bool { return c == _T('\r'); });
+		cmd.erase(it, cmd.end());
+		return cmd;
 	}
-	if (wParam == 0x0d)
+	else
 	{
-		UpdateCommandLine();
-		AddText(_T("\n"));
-		m_noOfChars = GetNoOfChars();
-		SendCommand(m_cmdLine);
-		m_cmdLine.clear();
+		return _T("");
 	}
-	if (wParam >= 0x20 && wParam <= 0x7e)
-	{
-		m_cmdLine += (TCHAR)wParam;
-		UpdateCommandLine();
-	}
-}
-
-bool CGhciTerminal::ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (Msg)
-	{
-	case WM_LBUTTONUP:
-	case WM_LBUTTONDBLCLK:
-		{
-			unsigned int ix = (unsigned int)::SendMessage(m_hwndLookup, LB_GETCURSEL, 0, 0);
-			if (ix != LB_ERR)
-			{ 
-				 TCHAR* p = reinterpret_cast<TCHAR*>(::SendMessage(m_hwndLookup, LB_GETITEMDATA, ix, 0));
-				 if (p)
-				 {
-					 m_cmdLine = p;
-					 UpdateCommandLine();
-				 }
-			}
-		}
-		break;
-	case WM_KEYDOWN:
-		{
-			switch (wParam)
-			{
-			case VK_ESCAPE:
-			case VK_TAB:
-				HideLookup();
-				break;
-			}
-		}
-		break;
-	default:
-		break;
-	}
-	return true;
 }
 
 bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
 	{
-	case WM_SIZE:
-		{
-			int n = 0;
-		}
-		break;
 	case TW_ADDTEXT:
 		if (lParam)
 		{
@@ -291,66 +179,122 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 		}
 		break;
 	case WM_CHAR:
+		switch (wParam)
 		{
-			HandleKeyPress(wParam, lParam);
-		}
-		break;
-	case WM_KEYDOWN:
+		case VK_SPACE:
 		{
-			HideLookup();
-
-			switch (wParam)
+			// Ctrl-Space toggles the command line history list box
+			if ((GetKeyState(VK_CONTROL) & 0x80000) > 0)
 			{
-				case VK_UP:
-				{
-					if (m_hix == -1)
-					{
-						m_hix = (int)m_cmdHistory.size() - 1;
-					}
-					else
-					{
-						m_hix = (m_hix + ((int)m_cmdHistory.size() - 1)) % (int)m_cmdHistory.size();
-					}
-					m_cmdLine = m_cmdHistory[m_hix];
-					UpdateCommandLine();
-					return false;
-				}
-				case VK_DOWN:
-				{
-					if (m_hix == -1)
-					{
-						m_hix = 0;
-					}
-					else
-					{
-						m_hix = (m_hix + 1) % m_cmdHistory.size();
-					}
-					m_cmdLine = m_cmdHistory[m_hix];
-					UpdateCommandLine();
-					return false;
-				}
-				case VK_TAB:
-					ShowLookup();
-					break;
-				case VK_ESCAPE:
-					m_cmdLine.clear();
-					UpdateCommandLine();
-					break;
+				ToggleLookup();
+				return true;
 			}
 		}
 		break;
+		case VK_RETURN:
+		{
+			StringT cmd = GetCommandLine();			
+			SendCommand(cmd);
+			AddText(_T("\n"));
+			m_noOfChars = GetNoOfChars();
+		}
+		return true;
+		}
+		break;
+	case WM_KEYDOWN:
+	{
+		HideLookup();
+
+		// if cursor position is before the prompt move it to
+
+		// the end of the doc
+		_charrange pos;
+		::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+		if (pos.cpMin < m_noOfChars)
+		{
+			int ndx = GetWindowTextLength(m_hwnd);
+			::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
+		}
+
+		switch (wParam)
+		{
+		case VK_UP:
+			if (m_cmdHistory.size() > 0)
+			{
+				if (m_hix == -1)
+				{
+					m_hix = (int)m_cmdHistory.size() - 1;
+				}
+				else
+				{
+					m_hix = (m_hix + ((int)m_cmdHistory.size() - 1)) % (int)m_cmdHistory.size();
+				}
+				UpdateCommandLine(m_cmdHistory[m_hix]);
+			}
+			return true;
+		case VK_DOWN:
+		{
+			if (m_cmdHistory.size() > 0)
+			{
+				if (m_hix == -1)
+				{
+					m_hix = 0;
+				}
+				else
+				{
+					m_hix = (m_hix + 1) % m_cmdHistory.size();
+				}
+				UpdateCommandLine(m_cmdHistory[m_hix]);
+			}
+			return true;
+		}
+		case VK_ESCAPE:
+			HideLookup();
+			UpdateCommandLine(_T(""));
+			return true;
+		case VK_BACK:
+		{
+			// prevent backspacing out the prompt
+			_charrange pos;
+			::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+			return (pos.cpMin <= m_noOfChars);
+		}
+		}
+	}
+	break;
 	default:
 		break;
 	}
-	return true;
+	return false;
+}
+
+void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
+
+	switch (pData->message)
+	{
+	case WM_SIZE:
+	{
+		if (m_parent == pData->hwnd)
+		{
+			int w = (int)(pData->lParam) & 0x0ffff;
+			int h = (int)(pData->lParam) >> 16;
+			::MoveWindow(m_hwnd, 0, 0, w, h, TRUE);
+		}
+	}
+	break;
+	default:
+		break;
+	}
 }
 
 // remove current display of command line and show latest 
-void CGhciTerminal::UpdateCommandLine()
+void CGhciTerminal::UpdateCommandLine(StringT text)
 {
 	int ndx = GetWindowTextLength(m_hwnd);
 	::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)m_noOfChars, (LPARAM)ndx);
-	::SendMessage(m_hwnd, EM_REPLACESEL, 0, (LPARAM)m_cmdLine.c_str());
+	::SendMessage(m_hwnd, EM_REPLACESEL, 0, (LPARAM)text.c_str());
 }
 
 // send a command to the process
@@ -400,7 +344,7 @@ CGhciTerminal::StringT CGhciTerminal::StringRemoveAt(StringT str, unsigned int s
 int CGhciTerminal::GetNoOfChars()
 {
 	_charrange pos;
-	BOOL b = (BOOL)::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
 	return pos.cpMin;
 }
 
@@ -412,6 +356,17 @@ CGhciTerminal::StringT CGhciTerminal::ToStringT(char* p)
 	return StringT(wBuff, n);
 #else
 	return StringT(p);
+#endif
+}
+
+CGhciTerminal::StringT CGhciTerminal::ToStringT(wchar_t* p)
+{
+#ifdef _UNICODE
+	return StringT(p);
+#else
+	char buff[1000];
+	int n = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, p, (int)wcslen(p), buff, sizeof(buff), NULL, NULL);
+	return std::string(buff, n);
 #endif
 }
 
@@ -437,7 +392,7 @@ DWORD WINAPI ReadAndHandleOutputFn(_In_ LPVOID lpParameter)
 	return 0;
 }
 
-void CGhciTerminal::StartCommand(char* file)
+void CGhciTerminal::StartCommand()
 {
 	HANDLE hOutputReadTmp, hOutputWrite;
 	HANDLE hInputWriteTmp, hInputRead;
@@ -485,7 +440,7 @@ void CGhciTerminal::StartCommand(char* file)
 	CloseHandle(hOutputReadTmp);
 	CloseHandle(hInputWriteTmp);
 
-	PrepAndLaunchRedirectedChild(file, hOutputWrite, hInputRead, hErrorWrite);
+	PrepAndLaunchRedirectedChild(hOutputWrite, hInputRead, hErrorWrite);
 
 	// Close pipe handles (do not continue to modify the parent).
 	// You need to make sure that no handles to the write end of the
@@ -504,7 +459,7 @@ void CGhciTerminal::StartCommand(char* file)
 // PrepAndLaunchRedirectedChild
 // Sets up STARTUPINFO structure, and launches redirected child.
 /////////////////////////////////////////////////////////////////////// 
-void CGhciTerminal::PrepAndLaunchRedirectedChild(char* file, HANDLE hChildStdOut,
+void CGhciTerminal::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
 	HANDLE hChildStdIn,
 	HANDLE hChildStdErr)
 {
@@ -530,12 +485,7 @@ void CGhciTerminal::PrepAndLaunchRedirectedChild(char* file, HANDLE hChildStdOut
 	// confusion.
 	// "C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	StringT fn = ToStringT(file);
-	wchar_t wFile[1000];
-	int n = (int)fn.copy(wFile, fn.size(), 0);
-	wFile[n] = 0;
-
-	CreateProcess(_T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe"), wFile, NULL, NULL, TRUE,
+	CreateProcess(_T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe"), NULL, NULL, NULL, TRUE,
 		CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
 	// Set global child process handle to cause threads to exit.
@@ -556,32 +506,139 @@ void CGhciTerminal::ReadAndHandleOutput()
 
 	while (TRUE)
 	{
-		ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer)-1), &nBytesRead, NULL);
+		ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL);
 		lpBuffer[nBytesRead] = 0;
 		AddTextTS(ToStringT(lpBuffer));
 		m_noOfChars = GetNoOfChars();
 	}
 }
 
-void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
-{
-	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
+//---------------------------------------------------------------
+// Command line list box handling
+//---------------------------------------------------------------
 
-	switch (pData->message)
+// rich text edit control, subclass win proc
+LRESULT CALLBACK ListBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
+	LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	CGhciTerminal* p = reinterpret_cast<CGhciTerminal*>(dwRefData);
+	if (p)
 	{
-	case WM_SIZE:
-	{
-		if (m_parent == pData->hwnd)
+		if (!p->ListBoxProc(uMsg, wParam, lParam))
 		{
-			int w = (int)(pData->lParam) & 0x0ffff;
-			int h = (int)(pData->lParam) >> 16;
-			::MoveWindow(m_hwnd, 0, 0, w, h, TRUE);
+			return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 		}
 	}
-	break;
-	default:
+	return 0;
+}
+
+bool CGhciTerminal::ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+	case WM_LBUTTONUP:
+		SetCommandLineFromList();
+		return true;
+	case WM_LBUTTONDBLCLK:
+		SetCommandLineFromList();
+		HideLookup();
+		return true;
+	case WM_CHAR:
+		if (wParam == VK_RETURN)
+		{
+			SetCommandLineFromList();
+			HideLookup();
+			return true;
+		}
+		break;
+	case WM_KEYDOWN:
+		if (wParam == VK_ESCAPE)
+		{
+			HideLookup();
+			return true;
+		}
 		break;
 	}
+	return false;
 }
+
+void CGhciTerminal::ShowLookup()
+{
+	if (m_hwndLookup == NULL)
+	{
+		// filter command history on start of current command
+		StringT s1 = GetCommandLine();
+		std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
+		std::vector<StringsT::const_iterator> filtered;
+		for (StringsT::const_iterator it = m_cmdHistory.begin(); it != m_cmdHistory.end(); ++it)
+		{
+			StringT s2 = *it;
+			std::transform(s2.begin(), s2.end(), s2.begin(), ::toupper);
+			s2 = s2.substr(0, s1.size());
+			if (s1 == s2) filtered.push_back(it);
+		}
+
+		if (filtered.size() > 0)
+		{
+			m_hwndLookup = CreateWindowExW(0, L"ListBox",
+				NULL, WS_CHILD | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
+				0, 0, 0, 0, m_hwnd, NULL, NULL, NULL);
+
+			RECT r;
+			::GetClientRect(m_hwnd, &r);
+			::MoveWindow(m_hwndLookup, (r.right - r.left) / 2, 0, (r.right - r.left) / 2, (r.bottom - r.top) / 2, TRUE);
+
+			for (std::vector<StringsT::const_iterator>::const_iterator it = filtered.begin(); it != filtered.end(); ++it)
+			{
+				int ix = (int)::SendMessage(m_hwndLookup, LB_ADDSTRING, 0, (LPARAM)(*it)->c_str());
+				::SendMessage(m_hwndLookup, LB_SETITEMDATA, ix, (LPARAM)(*it)->c_str());
+			}
+			::SetWindowSubclass(m_hwndLookup, ListBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
+			::SetFocus(m_hwndLookup);
+		}
+	}
+}
+
+void CGhciTerminal::HideLookup()
+{
+	if (m_hwndLookup)
+	{
+		::CloseWindow(m_hwndLookup);
+		::DestroyWindow(m_hwndLookup);
+		::RedrawWindow(m_hwnd, NULL, NULL, RDW_INTERNALPAINT);
+		m_hwndLookup = NULL;
+	}
+}
+
+void CGhciTerminal::ToggleLookup()
+{
+	if (m_hwndLookup)
+	{
+		HideLookup();
+	}
+	else
+	{
+		ShowLookup();
+	}
+}
+
+void CGhciTerminal::SetCommandLineFromList()
+{
+	unsigned int ix = (unsigned int)::SendMessage(m_hwndLookup, LB_GETCURSEL, 0, 0);
+	if (ix != LB_ERR)
+	{
+		TCHAR* p = reinterpret_cast<TCHAR*>(::SendMessage(m_hwndLookup, LB_GETITEMDATA, ix, 0));
+		if (p)
+		{
+			UpdateCommandLine(p);
+		}
+	}
+}
+
+
+
+
+
+
 
 
