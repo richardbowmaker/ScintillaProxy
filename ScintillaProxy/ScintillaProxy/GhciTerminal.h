@@ -25,7 +25,7 @@ public:
 	CGhciTerminal();
 	~CGhciTerminal();
 
-	bool Initialise(HWND hParent, char* file);
+	bool Initialise(HWND hParent, char* options, char* file);
 	void Uninitialise();
 	void ClearText();
 	void SetText(StringT text);
@@ -60,7 +60,6 @@ private:
 	HWND m_hwnd;
 	HWND m_parent;
 	HWND m_hwndLookup;
-	HMODULE m_hdll;
 	int m_noOfChars;	// no. of chars displayed excluding current command being typed by user
 						// prevents backspacing before start of new line
 	StringsT m_cmdHistory;
@@ -68,8 +67,10 @@ private:
 
 	//--------------------
 
-	void StartCommand();
-	void PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
+	void StartCommand(char* options, char* file);
+	void PrepAndLaunchRedirectedChild(
+		char* options, char* file,
+		HANDLE hChildStdOut,
 		HANDLE hChildStdIn,
 		HANDLE hChildStdErr);
 

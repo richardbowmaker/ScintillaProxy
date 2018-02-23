@@ -22,8 +22,8 @@ extern "C"
 	SCINTILLAPROXY_API void		__cdecl ScnDisableEvents(HWND scintilla);
 
 
-	SCINTILLAPROXY_API HWND __cdecl GhciNew(HWND parent, char* file);
-	SCINTILLAPROXY_API void __cdecl GhciClose(HWND ghci);
+	SCINTILLAPROXY_API HWND __cdecl GhciNew(HWND parent, char* options, char* file);
+	SCINTILLAPROXY_API void __cdecl GhciClose(HWND hwnd);
 }
 
 // internal functions

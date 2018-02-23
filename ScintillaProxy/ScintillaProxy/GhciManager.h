@@ -16,14 +16,16 @@ public:
 	CGhciManager();
 	~CGhciManager();
 
+	bool Initialise();
 	void Uninitialise();
-	const HWND NewGhci(HWND parent, char* file);
-	void CloseGhci(HWND ghci);
+	const HWND NewGhci(HWND parent, char* options, char* file);
+	void CloseGhci(HWND hwnd);
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
 
 private:
 
 	SGhcisT m_ghcis;
+	HMODULE m_hdll;
 };
 

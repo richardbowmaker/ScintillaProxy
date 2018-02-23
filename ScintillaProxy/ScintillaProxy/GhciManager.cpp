@@ -5,13 +5,19 @@
 #include <algorithm>
 
 
-CGhciManager::CGhciManager()
+CGhciManager::CGhciManager() : m_hdll(NULL)
 {
 }
 
 CGhciManager::~CGhciManager()
 {
 	Uninitialise();
+}
+
+bool CGhciManager::Initialise()
+{
+	m_hdll = ::LoadLibrary(TEXT("Msftedit.dll"));
+	return (m_hdll != NULL);
 }
 
 void CGhciManager::Uninitialise()
@@ -23,9 +29,9 @@ void CGhciManager::Uninitialise()
 	m_ghcis.clear();
 }
 
-const HWND CGhciManager::NewGhci(HWND parent, char* file)
+const HWND CGhciManager::NewGhci(HWND parent, char* options, char* file)
 {
-	if (parent == NULL) return NULL;
+	if (parent == NULL || m_hdll == NULL) return NULL;
 
 	// if parent already has a GHCI terminal return it
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
@@ -34,17 +40,23 @@ const HWND CGhciManager::NewGhci(HWND parent, char* file)
 
 	// start a new GHCI terminal
 	CGhciTerminalPtrT ptrGhci = CGhciTerminalPtrT(new CGhciTerminal);
-	ptrGhci->Initialise(parent, file);
-
-	// add to list and return it
-	m_ghcis.push_back(ptrGhci);
-	return ptrGhci->GetHwnd();
+	if (ptrGhci->Initialise(parent, options, file))
+	{
+		// add to list and return it
+		m_ghcis.push_back(ptrGhci);
+		return ptrGhci->GetHwnd();
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
-void CGhciManager::CloseGhci(HWND ghci)
+// either the GHCI hwnd or parent will do
+void CGhciManager::CloseGhci(HWND hwnd)
 {
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return ptrGhci->GetHwnd() == ghci; });
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
 	// uninitialise terminal and remove it
 	if (itr != m_ghcis.end())

@@ -27,7 +27,6 @@ LRESULT CALLBACK RichTextBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
 CGhciTerminal::CGhciTerminal() :
 	m_hwnd(NULL),
 	m_parent(NULL),
-	m_hdll(NULL),
 	m_hChildProcess(NULL),
 	m_hInputWrite(NULL),
 	m_hOutputRead(NULL),
@@ -41,45 +40,44 @@ CGhciTerminal::~CGhciTerminal()
 	Uninitialise();
 }
 
-bool CGhciTerminal::Initialise(HWND hParent, char* file)
+bool CGhciTerminal::Initialise(HWND hParent, char* options, char* file)
 {
 	m_parent = hParent;
-	m_hdll = ::LoadLibrary(TEXT("Msftedit.dll"));
+	m_hwnd = ::CreateWindowExW(0, MSFTEDIT_CLASS, L"",
+		ES_MULTILINE | WS_HSCROLL | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_TABSTOP,
+		0, 0, 0, 0, hParent, NULL, NULL, NULL);
 
-	if (m_hdll)
+	if (m_hwnd)
 	{
-		m_hwnd = ::CreateWindowExW(0, MSFTEDIT_CLASS, L"",
-			ES_MULTILINE | WS_HSCROLL | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_TABSTOP,
-			0, 0, 0, 0, hParent, NULL, NULL, NULL);
+		RECT r;
+		::GetClientRect(hParent, &r);
+		::MoveWindow(m_hwnd, 0, 0, r.right - r.left, r.bottom - r.top, TRUE);
 
-		if (m_hwnd)
-		{
-			RECT r;
-			::GetClientRect(hParent, &r);
-			::MoveWindow(m_hwnd, 0, 0, r.right - r.left, r.bottom - r.top, TRUE);
+		_charformat cf;
+		ZeroMemory(&cf, sizeof(cf));
+		cf.cbSize = sizeof(_charformat);
+		cf.dwMask = CFM_FACE | CFM_SIZE;
+		cf.yHeight = 180;
+		strncpy_s(cf.szFaceName, LF_FACESIZE, "Courier New", 12); // including terminating 0
+		::SendMessage(m_hwnd, EM_SETCHARFORMAT, SCF_ALL | SCF_DEFAULT, (LPARAM)&cf);
 
-			_charformat cf;
-			ZeroMemory(&cf, sizeof(cf));
-			cf.cbSize = sizeof(_charformat);
-			cf.dwMask = CFM_FACE;
-			strncpy_s(cf.szFaceName, LF_FACESIZE, "Courier New", 9);
-			::SendMessage(m_hwnd, EM_SETCHARFORMAT, SCF_ALL | SCF_DEFAULT, (LPARAM)&cf);
+		// subclass the rich edit text control
+		::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
 
-			// subclass the rich edit text control
-			::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
-
-			StartCommand();
-			return true;
-		}
+		StartCommand(options, file);
+		return true;
 	}
-	return false;
+	else
+	{
+		return false;
+	}
 }
 
 void CGhciTerminal::Uninitialise()
 {
 	if (m_hChildProcess)
 	{
-		TerminateProcess(m_hChildProcess, 0);
+		SendCommand(_T(":quit\n"));
 		m_hChildProcess = NULL;
 	}
 
@@ -392,7 +390,7 @@ DWORD WINAPI ReadAndHandleOutputFn(_In_ LPVOID lpParameter)
 	return 0;
 }
 
-void CGhciTerminal::StartCommand()
+void CGhciTerminal::StartCommand(char* options, char* file)
 {
 	HANDLE hOutputReadTmp, hOutputWrite;
 	HANDLE hInputWriteTmp, hInputRead;
@@ -440,7 +438,7 @@ void CGhciTerminal::StartCommand()
 	CloseHandle(hOutputReadTmp);
 	CloseHandle(hInputWriteTmp);
 
-	PrepAndLaunchRedirectedChild(hOutputWrite, hInputRead, hErrorWrite);
+	PrepAndLaunchRedirectedChild(options, file, hOutputWrite, hInputRead, hErrorWrite);
 
 	// Close pipe handles (do not continue to modify the parent).
 	// You need to make sure that no handles to the write end of the
@@ -459,7 +457,9 @@ void CGhciTerminal::StartCommand()
 // PrepAndLaunchRedirectedChild
 // Sets up STARTUPINFO structure, and launches redirected child.
 /////////////////////////////////////////////////////////////////////// 
-void CGhciTerminal::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
+void CGhciTerminal::PrepAndLaunchRedirectedChild(
+	char* options, char* file,
+	HANDLE hChildStdOut,
 	HANDLE hChildStdIn,
 	HANDLE hChildStdErr)
 {
@@ -485,8 +485,12 @@ void CGhciTerminal::PrepAndLaunchRedirectedChild(HANDLE hChildStdOut,
 	// confusion.
 	// "C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	CreateProcess(_T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe"), NULL, NULL, NULL, TRUE,
-		CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+	StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
+	StringT cmdl = ToStringT(options) + _T(' ');
+	cmdl += ToStringT(file);
+	wchar_t wBuff[1000];
+	wcscpy_s(wBuff, _countof(wBuff), cmdl.c_str());
+	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
 	// Set global child process handle to cause threads to exit.
 	m_hChildProcess = pi.hProcess;

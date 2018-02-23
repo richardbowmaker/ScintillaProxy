@@ -23,6 +23,7 @@ HHOOK winHook = 0; // the windows hook to capture windows messages
 void Initialise()
 {
 	scintillaMgr.Initialise();
+	ghciMgr.Initialise();
 
 	// add windows hook if this is the first editor
 	if (winHook == 0)
@@ -74,14 +75,14 @@ void ScnDisableEvents(HWND scintilla)
 	scintillaMgr.DisableEvents(scintilla);
 }
 
-HWND GhciNew(HWND parent, char* file)
+HWND GhciNew(HWND parent, char* options, char* file)
 {
-	return ghciMgr.NewGhci(parent, file);
+	return ghciMgr.NewGhci(parent, options, file);
 }
 
-void GhciClose(HWND ghci)
+void GhciClose(HWND hwnd)
 {
-	ghciMgr.CloseGhci(ghci);
+	ghciMgr.CloseGhci(hwnd);
 }
 
 LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
