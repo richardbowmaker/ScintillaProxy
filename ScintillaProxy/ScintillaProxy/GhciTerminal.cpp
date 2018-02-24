@@ -483,9 +483,9 @@ void CGhciTerminal::PrepAndLaunchRedirectedChild(
 	// Child.exe). Make sure Child.exe is in the same directory as
 	// redirect.c launch redirect from a command line to prevent location
 	// confusion.
-	// "C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe"
+	// "C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
+	StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe");
 	StringT cmdl = ToStringT(options) + _T(' ');
 	cmdl += ToStringT(file);
 	wchar_t wBuff[1000];
