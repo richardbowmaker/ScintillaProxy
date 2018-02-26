@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-// The GHCI manager class
+// The GHCI manager class //
 
 
 CGhciManager::CGhciManager() : m_hdll(NULL)
