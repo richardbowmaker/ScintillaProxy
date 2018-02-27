@@ -24,6 +24,11 @@ extern "C"
 
 	SCINTILLAPROXY_API HWND __cdecl GhciNew(HWND parent, char* options, char* file);
 	SCINTILLAPROXY_API void __cdecl GhciClose(HWND hwnd);
+	SCINTILLAPROXY_API BOOL __cdecl GhciPaste();
+	SCINTILLAPROXY_API BOOL __cdecl GhciCut();
+	SCINTILLAPROXY_API BOOL __cdecl GhciCopy();
+	SCINTILLAPROXY_API BOOL __cdecl GhciSelectAll();
+	SCINTILLAPROXY_API HWND __cdecl GhciHasFocus();
 }
 
 // internal functions

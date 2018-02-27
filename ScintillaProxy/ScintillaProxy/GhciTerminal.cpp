@@ -135,6 +135,44 @@ HWND CGhciTerminal::GetParentHwnd() const
 	return m_parent;
 }
 
+void CGhciTerminal::Paste()
+{
+	// if cursor position is before the prompt move it to
+	// the end of the doc
+	_charrange pos;
+	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+	if (pos.cpMin < m_noOfChars)
+	{
+		int ndx = GetWindowTextLength(m_hwnd);
+		::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
+	}
+
+	// paste text 
+	::SendMessage(m_hwnd, WM_PASTE, 0, 0);
+}
+
+void CGhciTerminal::Cut()
+{
+	// can only cut if at end of doc
+	_charrange pos;
+	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+	if (pos.cpMin >= m_noOfChars)
+	{
+		::SendMessage(m_hwnd, WM_CUT, 0, 0);
+	}
+}
+
+void CGhciTerminal::SelectAll()
+{
+	int ndx = GetWindowTextLength(m_hwnd);
+	::SendMessage(m_hwnd, EM_SETSEL, 0, (LPARAM)ndx);
+}
+	
+void CGhciTerminal::Copy()
+{
+	::SendMessage(m_hwnd, WM_COPY, 0, 0);
+}
+
 // non-blocking, thread safe
 void CGhciTerminal::AddTextTS(StringT text)
 {
@@ -204,7 +242,6 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 		HideLookup();
 
 		// if cursor position is before the prompt move it to
-
 		// the end of the doc
 		_charrange pos;
 		::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
@@ -257,6 +294,8 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 			::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
 			return (pos.cpMin <= m_noOfChars);
 		}
+		default:
+			break;
 		}
 	}
 	break;
@@ -485,7 +524,7 @@ void CGhciTerminal::PrepAndLaunchRedirectedChild(
 	// confusion.
 	// "C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe");
+	StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
 	StringT cmdl = ToStringT(options) + _T(' ');
 	cmdl += ToStringT(file);
 	wchar_t wBuff[1000];

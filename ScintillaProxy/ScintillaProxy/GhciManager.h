@@ -20,6 +20,11 @@ public:
 	void Uninitialise();
 	const HWND NewGhci(HWND parent, char* options, char* file);
 	void CloseGhci(HWND hwnd);
+	bool Paste();
+	bool Cut();
+	bool Copy();
+	bool SelectAll();
+	HWND HasFocus();
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
 

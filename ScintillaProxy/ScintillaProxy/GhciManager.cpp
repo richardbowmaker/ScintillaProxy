@@ -68,6 +68,95 @@ void CGhciManager::CloseGhci(HWND hwnd)
 	}
 }
 
+bool CGhciManager::Paste()
+{
+	HWND hwnd = ::GetFocus(); 
+
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->Paste();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool CGhciManager::Cut()
+{
+	HWND hwnd = ::GetFocus();
+
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->Cut();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool CGhciManager::Copy()
+{
+	HWND hwnd = ::GetFocus();
+
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->Copy();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool CGhciManager::SelectAll()
+{
+	HWND hwnd = ::GetFocus();
+
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->SelectAll();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+HWND CGhciManager::HasFocus()
+{
+	HWND hwnd = ::GetFocus();
+
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->GetHwnd();
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
 void CGhciManager::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	// if the source of the message is either the editor or its parent

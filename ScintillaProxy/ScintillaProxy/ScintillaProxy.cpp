@@ -97,6 +97,32 @@ LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 	return CallNextHookEx(winHook, nCode, wParam, lParam);
 }
 
+BOOL GhciPaste()
+{
+	return (BOOL)ghciMgr.Paste();
+}
+
+BOOL GhciCut()
+{
+	return (BOOL)ghciMgr.Cut();
+}
+
+BOOL GhciCopy()
+{
+	return (BOOL)ghciMgr.Copy();
+}
+
+BOOL GhciSelectAll()
+{
+	return (BOOL)ghciMgr.SelectAll();
+}
+
+HWND GhciHasFocus()
+{
+	return ghciMgr.HasFocus();
+}
+
+
 
 
 

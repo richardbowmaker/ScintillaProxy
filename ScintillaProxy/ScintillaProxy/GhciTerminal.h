@@ -37,6 +37,10 @@ public:
 	HWND GetParentHwnd() const;
 	int GetNoOfChars();
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
+	void Paste();
+	void Cut();
+	void Copy();
+	void SelectAll();
 
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
