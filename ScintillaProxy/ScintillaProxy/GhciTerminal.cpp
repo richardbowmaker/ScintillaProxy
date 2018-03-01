@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <string>
 
-//#pragma comment(lib, "User32.lib")
+#include "GhciManager.h"
 #include "GhciTerminal.h"
 
 // rich text edit control, subclass win proc
@@ -25,6 +25,9 @@ LRESULT CALLBACK RichTextBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
 }
 
 CGhciTerminal::CGhciTerminal() :
+	m_mgr(NULL),
+	m_notify(NULL),
+	m_eventsEnabled(false),
 	m_hwnd(NULL),
 	m_parent(NULL),
 	m_hChildProcess(NULL),
@@ -40,8 +43,9 @@ CGhciTerminal::~CGhciTerminal()
 	Uninitialise();
 }
 
-bool CGhciTerminal::Initialise(HWND hParent, char* options, char* file)
+bool CGhciTerminal::Initialise(CGhciManager* mgr, HWND hParent, char* options, char* file)
 {
+	m_mgr = mgr;
 	m_parent = hParent;
 	m_hwnd = ::CreateWindowExW(0, MSFTEDIT_CLASS, L"",
 		ES_MULTILINE | WS_HSCROLL | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_TABSTOP,
@@ -75,6 +79,9 @@ bool CGhciTerminal::Initialise(HWND hParent, char* options, char* file)
 
 void CGhciTerminal::Uninitialise()
 {
+	m_eventsEnabled = false;
+	::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, 0);
+
 	if (m_hChildProcess)
 	{
 		SendCommand(_T(":quit\n"));
@@ -133,6 +140,23 @@ HWND CGhciTerminal::GetHwnd() const
 HWND CGhciTerminal::GetParentHwnd() const
 {
 	return m_parent;
+}
+
+void CGhciTerminal::SetEventHandler(EventHandlerT callback)
+{
+	m_notify = callback;
+}
+
+void CGhciTerminal::EnableEvents()
+{
+	::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, ENM_SELCHANGE);
+	m_eventsEnabled = true;
+}
+
+void CGhciTerminal::DisableEvents()
+{
+	::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, 0);
+	m_eventsEnabled = false;
 }
 
 void CGhciTerminal::Paste()
@@ -202,10 +226,24 @@ CGhciTerminal::StringT CGhciTerminal::GetCommandLine()
 	}
 }
 
+void CGhciTerminal::Notify(int event)
+{
+	if (m_eventsEnabled && m_notify != NULL)
+	{
+		m_notify(m_hwnd, event);
+	}
+}
+
 bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (Msg)
 	{
+	case WM_SETFOCUS:
+		Notify(EventGotFocus);
+		break;
+	case WM_KILLFOCUS:
+		Notify(EventLostFocus);
+		break;
 	case TW_ADDTEXT:
 		if (lParam)
 		{
@@ -241,14 +279,17 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 	{
 		HideLookup();
 
-		// if cursor position is before the prompt move it to
-		// the end of the doc
-		_charrange pos;
-		::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
-		if (pos.cpMin < m_noOfChars)
+		if (wParam >= VK_SPACE)
 		{
-			int ndx = GetWindowTextLength(m_hwnd);
-			::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
+			// if cursor position is before the prompt move it to
+			// the end of the doc
+			_charrange pos;
+			::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+			if (pos.cpMin < m_noOfChars)
+			{
+				int ndx = GetWindowTextLength(m_hwnd);
+				::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
+			}
 		}
 
 		switch (wParam)
@@ -309,20 +350,28 @@ void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
 
-	switch (pData->message)
+	if (m_parent == pData->hwnd)
 	{
-	case WM_SIZE:
-	{
-		if (m_parent == pData->hwnd)
+		switch (pData->message)
+		{			
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)pData->lParam;
+			if (lpnmhdr->code == EN_SELCHANGE)
+			{
+				Notify(EventSelectionChanged);
+			}
+		}
+		case WM_SIZE:
 		{
 			int w = (int)(pData->lParam) & 0x0ffff;
 			int h = (int)(pData->lParam) >> 16;
 			::MoveWindow(m_hwnd, 0, 0, w, h, TRUE);
 		}
-	}
-	break;
-	default:
 		break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -355,6 +404,14 @@ void CGhciTerminal::SendCommand(StringT text)
 		}
 	}
 	m_hix = -1;
+}
+
+void CGhciTerminal::SendCommand(char* cmd)
+{
+	DWORD nBytesWrote;
+	std::string s = cmd + '\n';
+
+	WriteFile(m_hInputWrite, s.c_str(), (DWORD)s.size(), &nBytesWrote, NULL);
 }
 
 //-----------------------------------------------------------

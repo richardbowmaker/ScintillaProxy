@@ -23,16 +23,20 @@ extern "C"
 
 
 	SCINTILLAPROXY_API HWND __cdecl GhciNew(HWND parent, char* options, char* file);
+	SCINTILLAPROXY_API void __cdecl GhciSetEventHandler(HWND hwnd, void* callback);
+	SCINTILLAPROXY_API void __cdecl GhciEnableEvents(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciDisableEvents(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciClose(HWND hwnd);
-	SCINTILLAPROXY_API BOOL __cdecl GhciPaste();
-	SCINTILLAPROXY_API BOOL __cdecl GhciCut();
-	SCINTILLAPROXY_API BOOL __cdecl GhciCopy();
-	SCINTILLAPROXY_API BOOL __cdecl GhciSelectAll();
+	SCINTILLAPROXY_API void __cdecl GhciPaste(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciCut(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciCopy(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciSelectAll(HWND hwnd);
 	SCINTILLAPROXY_API HWND __cdecl GhciHasFocus();
+	SCINTILLAPROXY_API void __cdecl GhciSendCommand(HWND hwnd, char* cmd);
 }
 
 // internal functions
 void Initialise();
 void Uninitialise();
-LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
+
 

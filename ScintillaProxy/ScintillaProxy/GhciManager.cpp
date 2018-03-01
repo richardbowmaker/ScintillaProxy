@@ -6,6 +6,20 @@
 
 // The GHCI manager class //
 
+void CGhciManager::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	// if the source of the message is either the editor or its parent
+	// then pass it on
+	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
+
+	for (SGhcisT::iterator itr = m_ghcis.begin(); itr != m_ghcis.end(); ++itr)
+	{
+		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
+		{
+			(*itr)->WndProcRetHook(nCode, wParam, lParam);
+		}
+	}
+}
 
 CGhciManager::CGhciManager() : m_hdll(NULL)
 {
@@ -31,7 +45,7 @@ void CGhciManager::Uninitialise()
 	m_ghcis.clear();
 }
 
-const HWND CGhciManager::NewGhci(HWND parent, char* options, char* file)
+HWND CGhciManager::NewGhci(HWND parent, char* options, char* file)
 {
 	if (parent == NULL || m_hdll == NULL) return NULL;
 
@@ -42,7 +56,7 @@ const HWND CGhciManager::NewGhci(HWND parent, char* options, char* file)
 
 	// start a new GHCI terminal
 	CGhciTerminalPtrT ptrGhci = CGhciTerminalPtrT(new CGhciTerminal);
-	if (ptrGhci->Initialise(parent, options, file))
+	if (ptrGhci->Initialise(this, parent, options, file))
 	{
 		// add to list and return it
 		m_ghcis.push_back(ptrGhci);
@@ -68,75 +82,47 @@ void CGhciManager::CloseGhci(HWND hwnd)
 	}
 }
 
-bool CGhciManager::Paste()
+void CGhciManager::Paste(HWND hwnd)
 {
-	HWND hwnd = ::GetFocus(); 
-
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
 	if (itr != m_ghcis.end())
 	{
 		(*itr)->Paste();
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
-bool CGhciManager::Cut()
+void CGhciManager::Cut(HWND hwnd)
 {
-	HWND hwnd = ::GetFocus();
-
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
 	if (itr != m_ghcis.end())
 	{
 		(*itr)->Cut();
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
-bool CGhciManager::Copy()
+void CGhciManager::Copy(HWND hwnd)
 {
-	HWND hwnd = ::GetFocus();
-
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
 	if (itr != m_ghcis.end())
 	{
 		(*itr)->Copy();
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
-bool CGhciManager::SelectAll()
+void CGhciManager::SelectAll(HWND hwnd)
 {
-	HWND hwnd = ::GetFocus();
-
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
 	if (itr != m_ghcis.end())
 	{
 		(*itr)->SelectAll();
-		return true;
-	}
-	else
-	{
-		return false;
 	}
 }
 
@@ -157,17 +143,49 @@ HWND CGhciManager::HasFocus()
 	}
 }
 
-void CGhciManager::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+void CGhciManager::SetEventHandler(HWND hwnd, CGhciTerminal::EventHandlerT callback)
 {
-	// if the source of the message is either the editor or its parent
-	// then pass it on
-	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
-	for (SGhcisT::iterator itr = m_ghcis.begin(); itr != m_ghcis.end(); ++itr)
+	if (itr != m_ghcis.end())
 	{
-		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
-		{
-			(*itr)->WndProcRetHook(nCode, wParam, lParam);
-		}
+		(*itr)->SetEventHandler(callback);
 	}
 }
+
+void CGhciManager::EnableEvents(HWND hwnd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->EnableEvents();
+	}
+}
+
+void CGhciManager::DisableEvents(HWND hwnd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->DisableEvents();
+	}
+}
+
+void CGhciManager::SendCommand(HWND hwnd, char* cmd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->SendCommand(cmd);
+	}
+
+}
+
+

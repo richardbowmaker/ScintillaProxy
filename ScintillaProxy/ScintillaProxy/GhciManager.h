@@ -18,15 +18,18 @@ public:
 
 	bool Initialise();
 	void Uninitialise();
-	const HWND NewGhci(HWND parent, char* options, char* file);
+	HWND NewGhci(HWND parent, char* options, char* file);
+	void SetEventHandler(HWND hwnd, CGhciTerminal::EventHandlerT callback);
+	void EnableEvents(HWND hwnd);
+	void DisableEvents(HWND hwnd);
 	void CloseGhci(HWND hwnd);
-	bool Paste();
-	bool Cut();
-	bool Copy();
-	bool SelectAll();
+	void Paste(HWND hwnd);
+	void Cut(HWND hwnd);
+	void Copy(HWND hwnd);
+	void SelectAll(HWND hwnd);
 	HWND HasFocus();
+	void SendCommand(HWND hwnd, char* cmd);
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
-
 
 private:
 

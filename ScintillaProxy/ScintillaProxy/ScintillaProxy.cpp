@@ -12,12 +12,25 @@
 
 #include "ScintillaProxy.h"
 #include "GhciManager.h"
+#include "GhciTerminal.h"
 #include "ScintillaManager.h"
 
 CGhciManager		ghciMgr;
 CScintillaManager	scintillaMgr;
 
 HHOOK winHook = 0; // the windows hook to capture windows messages
+
+LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (nCode < 0)
+	{
+		return CallNextHookEx(winHook, nCode, wParam, lParam);
+	}
+
+	ghciMgr.WndProcRetHook(nCode, wParam, lParam);
+	scintillaMgr.WndProcRetHook(nCode, wParam, lParam);
+	return CallNextHookEx(winHook, nCode, wParam, lParam);
+}
 
 // Initialise the DLL
 void Initialise()
@@ -85,42 +98,52 @@ void GhciClose(HWND hwnd)
 	ghciMgr.CloseGhci(hwnd);
 }
 
-LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+void GhciPaste(HWND hwnd)
 {
-	if (nCode < 0)
-	{
-		return CallNextHookEx(winHook, nCode, wParam, lParam);
-	}
-
-	ghciMgr.WndProcRetHook(nCode, wParam, lParam);
-	scintillaMgr.WndProcRetHook(nCode, wParam, lParam);
-	return CallNextHookEx(winHook, nCode, wParam, lParam);
+	ghciMgr.Paste(hwnd);
 }
 
-BOOL GhciPaste()
+void GhciCut(HWND hwnd)
 {
-	return (BOOL)ghciMgr.Paste();
+	ghciMgr.Cut(hwnd);
 }
 
-BOOL GhciCut()
+void GhciCopy(HWND hwnd)
 {
-	return (BOOL)ghciMgr.Cut();
+	ghciMgr.Copy(hwnd);
 }
 
-BOOL GhciCopy()
+void GhciSelectAll(HWND hwnd)
 {
-	return (BOOL)ghciMgr.Copy();
-}
-
-BOOL GhciSelectAll()
-{
-	return (BOOL)ghciMgr.SelectAll();
+	ghciMgr.SelectAll(hwnd);
 }
 
 HWND GhciHasFocus()
 {
 	return ghciMgr.HasFocus();
 }
+
+void GhciSetEventHandler(HWND hwnd, void* callback)
+{
+	ghciMgr.SetEventHandler(hwnd, (CGhciTerminal::EventHandlerT)callback);
+}
+
+void GhciEnableEvents(HWND hwnd)
+{
+	ghciMgr.EnableEvents(hwnd);
+}
+
+void GhciDisableEvents(HWND hwnd)
+{
+	ghciMgr.DisableEvents(hwnd);
+}
+
+void GhciSendCommand(HWND hwnd, char* cmd)
+{
+	ghciMgr.SendCommand(hwnd, cmd);
+}
+
+
 
 
 

@@ -9,6 +9,8 @@
 
 #define TW_ADDTEXT WM_USER 
 
+class CGhciManager;
+
 class CGhciTerminal
 {
 public:
@@ -21,12 +23,21 @@ public:
 	typedef std::vector<StringT> StringsT;
 #endif
 
+	typedef void* (*EventHandlerT)(HWND, int);
+
 
 	CGhciTerminal();
 	~CGhciTerminal();
 
-	bool Initialise(HWND hParent, char* options, char* file);
+	bool Initialise(CGhciManager* mgr, HWND hParent, char* options, char* file);
 	void Uninitialise();
+	void SetEventHandler(EventHandlerT callback);
+	void EnableEvents();
+	void DisableEvents();
+	void Paste();
+	void Cut();
+	void Copy();
+	void SelectAll();
 	void ClearText();
 	void SetText(StringT text);
 	void AddText(StringT text);
@@ -36,11 +47,10 @@ public:
 	HWND GetHwnd() const;
 	HWND GetParentHwnd() const;
 	int GetNoOfChars();
+	void SendCommand(StringT text);
+	void SendCommand(char* cmd);
+
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
-	void Paste();
-	void Cut();
-	void Copy();
-	void SelectAll();
 
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -48,7 +58,7 @@ public:
 
 private:
 
-	void SendCommand(StringT text);
+	void Notify(int event);
 	void UpdateCommandLine(StringT text);
 	StringT GetCommandLine();
 	void SetCommandLineFromList();
@@ -61,13 +71,16 @@ private:
 	StringT ToStringT(wchar_t* p);
 	std::string ToChar(StringT& s);
 
+	CGhciManager* m_mgr;
+	EventHandlerT m_notify;
+	bool m_eventsEnabled;
 	HWND m_hwnd;
 	HWND m_parent;
 	HWND m_hwndLookup;
-	int m_noOfChars;	// no. of chars displayed excluding current command being typed by user
+	int	 m_noOfChars;	// no. of chars displayed excluding current command being typed by user
 						// prevents backspacing before start of new line
 	StringsT m_cmdHistory;
-	int m_hix;
+	int		 m_hix;
 
 	//--------------------
 
@@ -81,6 +94,13 @@ private:
 	HANDLE m_hChildProcess;
 	HANDLE m_hInputWrite;
 	HANDLE m_hOutputRead;
+
+	enum EventsT
+	{
+		EventGotFocus = 1,
+		EventLostFocus = 2,
+		EventSelectionChanged = 3
+	};
 };
 
 
