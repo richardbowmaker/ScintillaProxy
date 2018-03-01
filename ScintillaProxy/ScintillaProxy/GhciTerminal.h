@@ -99,7 +99,8 @@ private:
 	{
 		EventGotFocus = 1,
 		EventLostFocus = 2,
-		EventSelectionChanged = 3
+		EventSelectionSet = 3,
+		EventSelectionClear = 4
 	};
 };
 

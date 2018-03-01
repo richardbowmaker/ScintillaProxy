@@ -359,9 +359,24 @@ void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 			LPNMHDR lpnmhdr = (LPNMHDR)pData->lParam;
 			if (lpnmhdr->code == EN_SELCHANGE)
 			{
-				Notify(EventSelectionChanged);
+				// notify selection change, only if mouse left button up
+				// avoid sending lots of spurious notifications
+				if ((GetAsyncKeyState(VK_LBUTTON) & 0x80) == 0)
+				{
+					_charrange pos;
+					::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+					if (pos.cpMin == pos.cpMax)
+					{
+						Notify(EventSelectionClear);
+					}
+					else
+					{
+						Notify(EventSelectionSet);
+					}
+				}
 			}
 		}
+		break;
 		case WM_SIZE:
 		{
 			int w = (int)(pData->lParam) & 0x0ffff;
