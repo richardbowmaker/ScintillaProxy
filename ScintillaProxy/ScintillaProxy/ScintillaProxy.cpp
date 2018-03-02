@@ -143,6 +143,12 @@ void GhciSendCommand(HWND hwnd, char* cmd)
 	ghciMgr.SendCommand(hwnd, cmd);
 }
 
+BOOL GhciIsTextSelected(HWND hwnd)
+{
+	return ghciMgr.IsTextSelected(hwnd);
+}
+
+
 
 
 

@@ -49,6 +49,7 @@ public:
 	int GetNoOfChars();
 	void SendCommand(StringT text);
 	void SendCommand(char* cmd);
+	bool IsTextSelected();
 
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 

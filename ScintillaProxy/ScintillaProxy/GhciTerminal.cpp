@@ -363,15 +363,13 @@ void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 				// avoid sending lots of spurious notifications
 				if ((GetAsyncKeyState(VK_LBUTTON) & 0x80) == 0)
 				{
-					_charrange pos;
-					::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
-					if (pos.cpMin == pos.cpMax)
+					if (IsTextSelected())
 					{
-						Notify(EventSelectionClear);
+						Notify(EventSelectionSet);
 					}
 					else
 					{
-						Notify(EventSelectionSet);
+						Notify(EventSelectionClear);
 					}
 				}
 			}
@@ -402,7 +400,7 @@ void CGhciTerminal::UpdateCommandLine(StringT text)
 void CGhciTerminal::SendCommand(StringT text)
 {
 	DWORD nBytesWrote;
-	std::string cmd = ToChar(text) + '\n';
+	std::string cmd = ToChar(text) + std::string("\n");
 
 	WriteFile(m_hInputWrite, cmd.c_str(), (DWORD)cmd.size(), &nBytesWrote, NULL);
 
@@ -424,9 +422,16 @@ void CGhciTerminal::SendCommand(StringT text)
 void CGhciTerminal::SendCommand(char* cmd)
 {
 	DWORD nBytesWrote;
-	std::string s = cmd + '\n';
+	std::string s = cmd + std::string("\n");
 
 	WriteFile(m_hInputWrite, s.c_str(), (DWORD)s.size(), &nBytesWrote, NULL);
+}
+
+bool CGhciTerminal::IsTextSelected()
+{
+	_charrange pos;
+	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
+	return (pos.cpMin != pos.cpMax);
 }
 
 //-----------------------------------------------------------

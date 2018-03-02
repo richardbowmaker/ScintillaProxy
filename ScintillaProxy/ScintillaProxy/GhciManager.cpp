@@ -185,7 +185,22 @@ void CGhciManager::SendCommand(HWND hwnd, char* cmd)
 	{
 		(*itr)->SendCommand(cmd);
 	}
-
 }
+
+bool CGhciManager::IsTextSelected(HWND hwnd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->IsTextSelected();
+	}
+	else
+	{
+		return false;
+	}
+}
+
 
 

@@ -29,6 +29,7 @@ public:
 	void SelectAll(HWND hwnd);
 	HWND HasFocus();
 	void SendCommand(HWND hwnd, char* cmd);
+	bool IsTextSelected(HWND hwnd);
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
 private:
