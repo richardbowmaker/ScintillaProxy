@@ -118,9 +118,9 @@ void GhciSelectAll(HWND hwnd)
 	ghciMgr.SelectAll(hwnd);
 }
 
-HWND GhciHasFocus()
+BOOL GhciHasFocus(HWND hwnd)
 {
-	return ghciMgr.HasFocus();
+	return (BOOL)ghciMgr.HasFocus(hwnd);
 }
 
 void GhciSetEventHandler(HWND hwnd, void* callback)

@@ -126,20 +126,18 @@ void CGhciManager::SelectAll(HWND hwnd)
 	}
 }
 
-HWND CGhciManager::HasFocus()
+bool CGhciManager::HasFocus(HWND hwnd)
 {
-	HWND hwnd = ::GetFocus();
-
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd); });
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
 
 	if (itr != m_ghcis.end())
 	{
-		return (*itr)->GetHwnd();
+		return (*itr)->HasFocus();
 	}
 	else
 	{
-		return NULL;
+		return false;
 	}
 }
 

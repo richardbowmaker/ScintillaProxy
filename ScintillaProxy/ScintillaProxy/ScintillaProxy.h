@@ -31,7 +31,7 @@ extern "C"
 	SCINTILLAPROXY_API void __cdecl GhciCut(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciCopy(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciSelectAll(HWND hwnd);
-	SCINTILLAPROXY_API HWND __cdecl GhciHasFocus();
+	SCINTILLAPROXY_API BOOL __cdecl GhciHasFocus(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciSendCommand(HWND hwnd, char* cmd);
 	SCINTILLAPROXY_API BOOL __cdecl GhciIsTextSelected(HWND hwnd);
 }

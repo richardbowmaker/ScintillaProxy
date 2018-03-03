@@ -50,6 +50,7 @@ public:
 	void SendCommand(StringT text);
 	void SendCommand(char* cmd);
 	bool IsTextSelected();
+	bool HasFocus();
 
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
@@ -101,7 +102,8 @@ private:
 		EventGotFocus = 1,
 		EventLostFocus = 2,
 		EventSelectionSet = 3,
-		EventSelectionClear = 4
+		EventSelectionClear = 4,
+		EventClosed = 5
 	};
 };
 

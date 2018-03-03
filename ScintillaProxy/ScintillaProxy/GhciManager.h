@@ -27,7 +27,7 @@ public:
 	void Cut(HWND hwnd);
 	void Copy(HWND hwnd);
 	void SelectAll(HWND hwnd);
-	HWND HasFocus();
+	bool HasFocus(HWND hwnd);
 	void SendCommand(HWND hwnd, char* cmd);
 	bool IsTextSelected(HWND hwnd);
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);

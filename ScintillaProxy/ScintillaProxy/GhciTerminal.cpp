@@ -79,6 +79,7 @@ bool CGhciTerminal::Initialise(CGhciManager* mgr, HWND hParent, char* options, c
 
 void CGhciTerminal::Uninitialise()
 {
+	Notify(EventClosed);
 	m_eventsEnabled = false;
 	::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, 0);
 
@@ -333,7 +334,15 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 			// prevent backspacing out the prompt
 			_charrange pos;
 			::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
-			return (pos.cpMin <= m_noOfChars);
+			if (pos.cpMax <= m_noOfChars)
+			{
+				return true;
+			}
+			else if (pos.cpMax != pos.cpMin)
+			{
+				// modify selected text so it doesn't include the prompt
+				::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)m_noOfChars, (LPARAM)pos.cpMax);
+			}
 		}
 		default:
 			break;
@@ -432,6 +441,11 @@ bool CGhciTerminal::IsTextSelected()
 	_charrange pos;
 	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
 	return (pos.cpMin != pos.cpMax);
+}
+
+bool CGhciTerminal::HasFocus()
+{
+	return m_hwnd == ::GetFocus();
 }
 
 //-----------------------------------------------------------
