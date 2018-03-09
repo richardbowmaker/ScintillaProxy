@@ -288,7 +288,7 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 			::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
 			if (pos.cpMin < m_noOfChars)
 			{
-				int ndx = GetWindowTextLength(m_hwnd);
+				int ndx = ::GetWindowTextLength(m_hwnd);
 				::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
 			}
 		}
@@ -446,6 +446,41 @@ bool CGhciTerminal::IsTextSelected()
 bool CGhciTerminal::HasFocus()
 {
 	return m_hwnd == ::GetFocus();
+}
+
+void CGhciTerminal::SetFocus()
+{
+	::SetFocus(m_hwnd);
+}
+
+int CGhciTerminal::GetTextLength()
+{
+	return ::GetWindowTextLength(m_hwnd);
+}
+
+ int CGhciTerminal::GetText(char* buff, int size)
+{
+	int n = min(size - 1, ::GetWindowTextLength(m_hwnd));
+	TCHAR* p = (TCHAR*)::malloc((n + 1) * sizeof(TCHAR));
+	if (p)
+	{
+		_textrange tr;
+		tr.chrg.cpMin = 0;
+		tr.chrg.cpMax = n;
+		tr.lpstrText = (char*)p;
+		::SendMessage(m_hwnd, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
+		StringT str(p);
+		std::replace(str.begin(), str.end(), _T('\r'), _T('\n'));
+
+		std::string text = ToChar(str);
+		strncpy_s(buff, n + 1, text.c_str(), text.size());
+		::free(p);
+		return text.size();
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 //-----------------------------------------------------------

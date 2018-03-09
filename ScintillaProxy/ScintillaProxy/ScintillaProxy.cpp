@@ -148,6 +148,22 @@ BOOL GhciIsTextSelected(HWND hwnd)
 	return ghciMgr.IsTextSelected(hwnd);
 }
 
+void GhciSetFocus(HWND hwnd)
+{
+	ghciMgr.SetFocus(hwnd);
+}
+
+int GhciGetTextLength(HWND hwnd)
+{
+	return ghciMgr.GetTextLength(hwnd);
+}
+
+int GhciGetText(HWND hwnd, char* buff, int size)
+{
+	return ghciMgr.GetText(hwnd, buff, size);
+}
+
+
 
 
 

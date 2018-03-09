@@ -30,6 +30,9 @@ public:
 	bool HasFocus(HWND hwnd);
 	void SendCommand(HWND hwnd, char* cmd);
 	bool IsTextSelected(HWND hwnd);
+	void SetFocus(HWND hwnd);
+	int GetTextLength(HWND hwnd);
+	int GetText(HWND hwnd, char* buff, int size);
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
 private:

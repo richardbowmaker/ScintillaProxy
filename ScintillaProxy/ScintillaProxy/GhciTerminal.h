@@ -51,6 +51,9 @@ public:
 	void SendCommand(char* cmd);
 	bool IsTextSelected();
 	bool HasFocus();
+	void SetFocus();
+	int GetTextLength();
+	int GetText(char* buff, int size);
 
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 

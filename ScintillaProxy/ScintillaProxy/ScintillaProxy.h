@@ -32,9 +32,16 @@ extern "C"
 	SCINTILLAPROXY_API void __cdecl GhciCopy(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciSelectAll(HWND hwnd);
 	SCINTILLAPROXY_API BOOL __cdecl GhciHasFocus(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciSetFocus(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciSendCommand(HWND hwnd, char* cmd);
 	SCINTILLAPROXY_API BOOL __cdecl GhciIsTextSelected(HWND hwnd);
+	SCINTILLAPROXY_API int  __cdecl GhciGetTextLength(HWND hwnd);
+	SCINTILLAPROXY_API int  __cdecl GhciGetText(HWND hwnd, char* buff, int size);
 }
+
+void GhciSetFocus(HWND hwnd);
+unsigned __int64 GetTextLength(HWND hwnd);
+unsigned __int64 GetText(HWND hwnd, char* buff, unsigned __int64 size);
 
 // internal functions
 void Initialise();

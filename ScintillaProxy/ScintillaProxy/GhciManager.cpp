@@ -200,5 +200,47 @@ bool CGhciManager::IsTextSelected(HWND hwnd)
 	}
 }
 
+void CGhciManager::SetFocus(HWND hwnd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->SetFocus();
+	}
+}
+
+int CGhciManager::GetTextLength(HWND hwnd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->GetTextLength();
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int CGhciManager::GetText(HWND hwnd, char* buff, int size)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->GetText(buff, size);
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
 
 
