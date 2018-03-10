@@ -94,7 +94,12 @@ void CScintillaEditor::Uninitialise()
 
 LRESULT CScintillaEditor::SendEditor(UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	return m_direct(m_sptr, Msg, wParam, lParam);
+	if (Msg == SCI_GETTEXT)
+	{
+		int n = 0;
+	}
+	LRESULT lr = m_direct(m_sptr, Msg, wParam, lParam);
+	return lr;
 }
 
 void CScintillaEditor::SetEventHandler(void* callback)

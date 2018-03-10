@@ -455,32 +455,34 @@ void CGhciTerminal::SetFocus()
 
 int CGhciTerminal::GetTextLength()
 {
-	return ::GetWindowTextLength(m_hwnd);
+	GETTEXTLENGTHEX tl;
+	tl.flags = GTL_USECRLF | GTL_NUMCHARS;
+	tl.codepage = CP_ACP;
+	return (int) ::SendMessage(m_hwnd, EM_GETTEXTLENGTHEX, (WPARAM)&tl, 0);
 }
 
  int CGhciTerminal::GetText(char* buff, int size)
 {
-	int n = min(size - 1, ::GetWindowTextLength(m_hwnd));
-	TCHAR* p = (TCHAR*)::malloc((n + 1) * sizeof(TCHAR));
-	if (p)
-	{
-		_textrange tr;
-		tr.chrg.cpMin = 0;
-		tr.chrg.cpMax = n;
-		tr.lpstrText = (char*)p;
-		::SendMessage(m_hwnd, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
-		StringT str(p);
-		std::replace(str.begin(), str.end(), _T('\r'), _T('\n'));
-
-		std::string text = ToChar(str);
-		strncpy_s(buff, n + 1, text.c_str(), text.size());
+	 int n = GetTextLength();
+	 int s = 1 + min(size, n);
+	 char* p = (char*) ::malloc(s);
+	 if (p)
+	 {
+		GETTEXTEX gt;
+		gt.cb = s;
+		gt.flags = GT_USECRLF;
+		gt.codepage = CP_ACP;
+		gt.lpDefaultChar = NULL;
+		gt.lpUsedDefChar = NULL;
+		int nc = (int)::SendMessage(m_hwnd, EM_GETTEXTEX, (WPARAM)&gt, (LPARAM)p);
+		strncpy_s(buff, size + 1, p, nc);
 		::free(p);
-		return text.size();
-	}
-	else
-	{
-		return 0;
-	}
+		return nc;
+	 }
+	 else
+	 {
+		 return 0;
+	 }
 }
 
 //-----------------------------------------------------------
