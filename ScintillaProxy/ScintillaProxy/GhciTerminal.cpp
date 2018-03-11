@@ -461,28 +461,18 @@ int CGhciTerminal::GetTextLength()
 	return (int) ::SendMessage(m_hwnd, EM_GETTEXTLENGTHEX, (WPARAM)&tl, 0);
 }
 
- int CGhciTerminal::GetText(char* buff, int size)
+int CGhciTerminal::GetText(char* buff, int size)
 {
-	 int n = GetTextLength();
-	 int s = 1 + min(size, n);
-	 char* p = (char*) ::malloc(s);
-	 if (p)
-	 {
-		GETTEXTEX gt;
-		gt.cb = s;
-		gt.flags = GT_USECRLF;
-		gt.codepage = CP_ACP;
-		gt.lpDefaultChar = NULL;
-		gt.lpUsedDefChar = NULL;
-		int nc = (int)::SendMessage(m_hwnd, EM_GETTEXTEX, (WPARAM)&gt, (LPARAM)p);
-		strncpy_s(buff, size + 1, p, nc);
-		::free(p);
-		return nc;
-	 }
-	 else
-	 {
-		 return 0;
-	 }
+	int n = GetTextLength();
+	int s = 1 + min(size, n);
+	GETTEXTEX gt;
+	gt.cb = s;
+	gt.flags = GT_USECRLF;
+	gt.codepage = CP_ACP;
+	gt.lpDefaultChar = NULL;
+	gt.lpUsedDefChar = NULL;
+	int nc = (int)::SendMessage(m_hwnd, EM_GETTEXTEX, (WPARAM)&gt, (LPARAM)buff);
+	return nc;
 }
 
 //-----------------------------------------------------------
