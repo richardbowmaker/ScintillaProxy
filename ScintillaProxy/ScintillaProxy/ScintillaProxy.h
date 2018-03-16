@@ -37,6 +37,7 @@ extern "C"
 	SCINTILLAPROXY_API BOOL __cdecl GhciIsTextSelected(HWND hwnd);
 	SCINTILLAPROXY_API int  __cdecl GhciGetTextLength(HWND hwnd);
 	SCINTILLAPROXY_API int  __cdecl GhciGetText(HWND hwnd, char* buff, int size);
+	SCINTILLAPROXY_API void __cdecl GhciClear(HWND hwnd);
 }
 
 void GhciSetFocus(HWND hwnd);

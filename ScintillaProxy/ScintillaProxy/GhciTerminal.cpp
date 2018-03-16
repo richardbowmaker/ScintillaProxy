@@ -69,6 +69,7 @@ bool CGhciTerminal::Initialise(CGhciManager* mgr, HWND hParent, char* options, c
 		::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
 
 		StartCommand(options, file);
+
 		return true;
 	}
 	else
@@ -181,10 +182,15 @@ void CGhciTerminal::Cut()
 	// can only cut if at end of doc
 	_charrange pos;
 	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
-	if (pos.cpMin >= m_noOfChars)
+	if (pos.cpMax < m_noOfChars)
 	{
-		::SendMessage(m_hwnd, WM_CUT, 0, 0);
+		return;
 	}
+	else if (pos.cpMin < m_noOfChars)
+	{
+		::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)m_noOfChars, (LPARAM)pos.cpMax);
+	}
+	::SendMessage(m_hwnd, WM_CUT, 0, 0);
 }
 
 void CGhciTerminal::SelectAll()
@@ -338,7 +344,7 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 			{
 				return true;
 			}
-			else if (pos.cpMax != pos.cpMin)
+			else if (pos.cpMin < m_noOfChars)
 			{
 				// modify selected text so it doesn't include the prompt
 				::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)m_noOfChars, (LPARAM)pos.cpMax);
@@ -432,7 +438,6 @@ void CGhciTerminal::SendCommand(char* cmd)
 {
 	DWORD nBytesWrote;
 	std::string s = cmd + std::string("\n");
-
 	WriteFile(m_hInputWrite, s.c_str(), (DWORD)s.size(), &nBytesWrote, NULL);
 }
 
@@ -473,6 +478,12 @@ int CGhciTerminal::GetText(char* buff, int size)
 	gt.lpUsedDefChar = NULL;
 	int nc = (int)::SendMessage(m_hwnd, EM_GETTEXTEX, (WPARAM)&gt, (LPARAM)buff);
 	return nc;
+}
+
+void CGhciTerminal::Clear()
+{
+	ClearText();
+	SendCommand("");
 }
 
 //-----------------------------------------------------------
@@ -668,9 +679,12 @@ void CGhciTerminal::ReadAndHandleOutput()
 	while (TRUE)
 	{
 		ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL);
-		lpBuffer[nBytesRead] = 0;
-		AddTextTS(ToStringT(lpBuffer));
-		m_noOfChars = GetNoOfChars();
+		if (nBytesRead > 0)
+		{
+			lpBuffer[nBytesRead] = 0;
+			AddTextTS(ToStringT(lpBuffer));
+			m_noOfChars = GetNoOfChars();
+		}
 	}
 }
 

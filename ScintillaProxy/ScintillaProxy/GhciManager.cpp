@@ -241,6 +241,18 @@ int CGhciManager::GetText(HWND hwnd, char* buff, int size)
 	}
 }
 
+void CGhciManager::Clear(HWND hwnd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->Clear();
+	}
+}
+
+
 
 
 

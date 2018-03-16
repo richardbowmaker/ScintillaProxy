@@ -94,7 +94,7 @@ void CScintillaEditor::Uninitialise()
 
 LRESULT CScintillaEditor::SendEditor(UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (Msg == SCI_GETTEXT)
+	if (Msg == SCI_GETSELTEXT || Msg == SCI_REPLACESEL)
 	{
 		int n = 0;
 	}

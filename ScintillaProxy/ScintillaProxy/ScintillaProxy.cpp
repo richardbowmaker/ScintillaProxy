@@ -163,6 +163,12 @@ int GhciGetText(HWND hwnd, char* buff, int size)
 	return ghciMgr.GetText(hwnd, buff, size);
 }
 
+void GhciClear(HWND hwnd)
+{
+	return ghciMgr.Clear(hwnd);
+}
+
+
 
 
 

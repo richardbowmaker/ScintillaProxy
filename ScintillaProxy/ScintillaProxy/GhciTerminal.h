@@ -54,6 +54,8 @@ public:
 	void SetFocus();
 	int GetTextLength();
 	int GetText(char* buff, int size);
+	void Clear();
+
 
 	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
 
