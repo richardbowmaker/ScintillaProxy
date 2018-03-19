@@ -1,10 +1,11 @@
 #include "stdafx.h"
-#include<windows.h>
+#include <windows.h>
+#include <Windowsx.h>
 #include <tchar.h>
 #include <stdio.h> 
 #include <Commctrl.h>
 #include <algorithm>
-#include <string>
+
 
 #include "GhciManager.h"
 #include "GhciTerminal.h"
@@ -34,7 +35,8 @@ CGhciTerminal::CGhciTerminal() :
 	m_hInputWrite(NULL),
 	m_hOutputRead(NULL),
 	m_noOfChars(0),
-	m_hwndLookup(NULL)
+	m_hwndLookup(NULL),
+	m_popup(NULL)
 {
 }
 
@@ -68,6 +70,7 @@ bool CGhciTerminal::Initialise(CGhciManager* mgr, HWND hParent, char* options, c
 		// subclass the rich edit text control
 		::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
 
+	
 		StartCommand(options, file);
 
 		return true;
@@ -92,6 +95,12 @@ void CGhciTerminal::Uninitialise()
 
 	HideLookup();
 
+	if (m_popup)
+	{
+		::DestroyMenu(m_popup);
+		m_popup = NULL;
+	}
+
 	if (m_hwnd)
 	{
 		::CloseWindow(m_hwnd);
@@ -110,20 +119,20 @@ void CGhciTerminal::ClearText()
 	m_noOfChars = 0;
 }
 
-void CGhciTerminal::SetText(StringT text)
+void CGhciTerminal::SetText(CUtils::StringT text)
 {
 	ClearText();
 	AddText(text);
 }
 
-void CGhciTerminal::AddText(StringT text)
+void CGhciTerminal::AddText(CUtils::StringT text)
 {
 	int ndx = GetWindowTextLength(m_hwnd);
 	::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)ndx, (LPARAM)ndx);
 	::SendMessage(m_hwnd, EM_REPLACESEL, 0, (LPARAM)text.c_str());
 }
 
-void CGhciTerminal::AddLine(StringT text)
+void CGhciTerminal::AddLine(CUtils::StringT text)
 {
 	AddText(text);
 	NewLine();
@@ -205,13 +214,13 @@ void CGhciTerminal::Copy()
 }
 
 // non-blocking, thread safe
-void CGhciTerminal::AddTextTS(StringT text)
+void CGhciTerminal::AddTextTS(CUtils::StringT text)
 {
 	TCHAR* p = _tcsdup(text.c_str());
 	::SendMessage(m_hwnd, TW_ADDTEXT, 0, reinterpret_cast<LPARAM>(p));
 }
 
-CGhciTerminal::StringT CGhciTerminal::GetCommandLine()
+CUtils::StringT CGhciTerminal::GetCommandLine()
 {
 	int n = GetWindowTextLength(m_hwnd);
 	if (n > m_noOfChars)
@@ -222,8 +231,8 @@ CGhciTerminal::StringT CGhciTerminal::GetCommandLine()
 		tr.chrg.cpMax = n;
 		tr.lpstrText = (char*)buff;
 		::SendMessage(m_hwnd, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
-		StringT cmd = buff;
-		StringT::iterator it = std::remove_if(cmd.begin(), cmd.end(), [=](TCHAR& c) -> bool { return c == _T('\r'); });
+		CUtils::StringT cmd = buff;
+		CUtils::StringT::iterator it = std::remove_if(cmd.begin(), cmd.end(), [=](TCHAR& c) -> bool { return c == _T('\r'); });
 		cmd.erase(it, cmd.end());
 		return cmd;
 	}
@@ -274,7 +283,7 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 		break;
 		case VK_RETURN:
 		{
-			StringT cmd = GetCommandLine();			
+			CUtils::StringT cmd = GetCommandLine();
 			SendCommand(cmd);
 			AddText(_T("\n"));
 			m_noOfChars = GetNoOfChars();
@@ -361,14 +370,22 @@ bool CGhciTerminal::RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM l
 	return false;
 }
 
-void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+void CGhciTerminal::WndProcRetHook(LPCWPRETSTRUCT pData)
 {
-	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
-
 	if (m_parent == pData->hwnd)
 	{
 		switch (pData->message)
-		{			
+		{
+		case WM_CONTEXTMENU:
+		{
+			if (m_popup)
+			{
+				int x = GET_X_LPARAM(pData->lParam);
+				int y = GET_Y_LPARAM(pData->lParam);
+				::TrackPopupMenu(m_popup, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, x, y, 0, m_parent, 0);
+			}
+		}
+		break;
 		case WM_NOTIFY:
 		{
 			LPNMHDR lpnmhdr = (LPNMHDR)pData->lParam;
@@ -403,8 +420,29 @@ void CGhciTerminal::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 	}
 }
 
+void CGhciTerminal::GetMsgProc(LPMSG pData)
+{
+	if (m_parent == pData->hwnd)
+	{
+		switch (pData->message)
+		{
+		case WM_COMMAND:
+		{
+			int id = LOWORD(pData->wParam);
+			if (id == 1000)
+			{
+				int n = 0;
+			}
+		}
+		break;
+		default:
+			break;
+		}
+	}
+}
+
 // remove current display of command line and show latest 
-void CGhciTerminal::UpdateCommandLine(StringT text)
+void CGhciTerminal::UpdateCommandLine(CUtils::StringT text)
 {
 	int ndx = GetWindowTextLength(m_hwnd);
 	::SendMessage(m_hwnd, EM_SETSEL, (WPARAM)m_noOfChars, (LPARAM)ndx);
@@ -412,10 +450,10 @@ void CGhciTerminal::UpdateCommandLine(StringT text)
 }
 
 // send a command to the process
-void CGhciTerminal::SendCommand(StringT text)
+void CGhciTerminal::SendCommand(CUtils::StringT text)
 {
 	DWORD nBytesWrote;
-	std::string cmd = ToChar(text) + std::string("\n");
+	std::string cmd = CUtils::ToChar(text) + std::string("\n");
 
 	WriteFile(m_hInputWrite, cmd.c_str(), (DWORD)cmd.size(), &nBytesWrote, NULL);
 
@@ -426,7 +464,7 @@ void CGhciTerminal::SendCommand(StringT text)
 		{
 			m_cmdHistory.push_back(text);
 		}
-		else if (!StringStartsWith(m_cmdHistory[m_cmdHistory.size() - 1], text))
+		else if (!CUtils::StringStartsWith(m_cmdHistory[m_cmdHistory.size() - 1], text))
 		{
 			m_cmdHistory.push_back(text);
 		}
@@ -486,65 +524,11 @@ void CGhciTerminal::Clear()
 	SendCommand("");
 }
 
-//-----------------------------------------------------------
-// helpers
-//-----------------------------------------------------------
-
-bool CGhciTerminal::StringStartsWith(StringT str, StringT start)
-{
-	if (str.size() == 0 || start.size() == 0) return false;
-	StringT s = str.substr(0, start.size());
-	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-	std::transform(start.begin(), start.end(), start.begin(), ::toupper);
-	return s == start;
-}
-
-CGhciTerminal::StringT CGhciTerminal::StringRemoveAt(StringT str, unsigned int start, unsigned int len)
-{
-	StringT s1, s2;
-	if (start > 0 && start < str.size()) s1 = str.substr(0, start);
-	if (start + len > 0 && start + len < str.size()) s2 = str.substr(start + len);
-	return s1 + s2;
-}
-
 int CGhciTerminal::GetNoOfChars()
 {
 	_charrange pos;
 	::SendMessage(m_hwnd, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&pos));
 	return pos.cpMin;
-}
-
-CGhciTerminal::StringT CGhciTerminal::ToStringT(char* p)
-{
-#ifdef _UNICODE
-	wchar_t wBuff[1000];
-	int n = MultiByteToWideChar(CP_ACP, MB_COMPOSITE, p, (int)strlen(p), wBuff, sizeof(wBuff));
-	return StringT(wBuff, n);
-#else
-	return StringT(p);
-#endif
-}
-
-CGhciTerminal::StringT CGhciTerminal::ToStringT(wchar_t* p)
-{
-#ifdef _UNICODE
-	return StringT(p);
-#else
-	char buff[1000];
-	int n = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, p, (int)wcslen(p), buff, sizeof(buff), NULL, NULL);
-	return std::string(buff, n);
-#endif
-}
-
-std::string CGhciTerminal::ToChar(StringT& s)
-{
-#ifdef _UNICODE
-	char buff[1000];
-	int n = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, s.c_str(), (int)s.size(), buff, sizeof(buff), NULL, NULL);
-	return std::string(buff, n);
-#else
-	return s;
-#endif
 }
 
 //-----------------------------------------------------------
@@ -653,9 +637,9 @@ void CGhciTerminal::PrepAndLaunchRedirectedChild(
 	// confusion.
 	// "C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
-	StringT cmdl = ToStringT(options) + _T(' ');
-	cmdl += ToStringT(file);
+	CUtils::StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
+	CUtils::StringT cmdl = CUtils::ToStringT(options) + _T(' ');
+	cmdl += CUtils::ToStringT(file);
 	wchar_t wBuff[1000];
 	wcscpy_s(wBuff, _countof(wBuff), cmdl.c_str());
 	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
@@ -682,7 +666,7 @@ void CGhciTerminal::ReadAndHandleOutput()
 		if (nBytesRead > 0)
 		{
 			lpBuffer[nBytesRead] = 0;
-			AddTextTS(ToStringT(lpBuffer));
+			AddTextTS(CUtils::ToStringT(lpBuffer));
 			m_noOfChars = GetNoOfChars();
 		}
 	}
@@ -742,12 +726,12 @@ void CGhciTerminal::ShowLookup()
 	if (m_hwndLookup == NULL)
 	{
 		// filter command history on start of current command
-		StringT s1 = GetCommandLine();
+		CUtils::StringT s1 = GetCommandLine();
 		std::transform(s1.begin(), s1.end(), s1.begin(), ::toupper);
-		std::vector<StringsT::const_iterator> filtered;
-		for (StringsT::const_iterator it = m_cmdHistory.begin(); it != m_cmdHistory.end(); ++it)
+		std::vector<CUtils::StringsT::const_iterator> filtered;
+		for (CUtils::StringsT::const_iterator it = m_cmdHistory.begin(); it != m_cmdHistory.end(); ++it)
 		{
-			StringT s2 = *it;
+			CUtils::StringT s2 = *it;
 			std::transform(s2.begin(), s2.end(), s2.begin(), ::toupper);
 			s2 = s2.substr(0, s1.size());
 			if (s1 == s2) filtered.push_back(it);
@@ -763,7 +747,7 @@ void CGhciTerminal::ShowLookup()
 			::GetClientRect(m_hwnd, &r);
 			::MoveWindow(m_hwndLookup, (r.right - r.left) / 2, 0, (r.right - r.left) / 2, (r.bottom - r.top) / 2, TRUE);
 
-			for (std::vector<StringsT::const_iterator>::const_iterator it = filtered.begin(); it != filtered.end(); ++it)
+			for (std::vector<CUtils::StringsT::const_iterator>::const_iterator it = filtered.begin(); it != filtered.end(); ++it)
 			{
 				int ix = (int)::SendMessage(m_hwndLookup, LB_ADDSTRING, 0, (LPARAM)(*it)->c_str());
 				::SendMessage(m_hwndLookup, LB_SETITEMDATA, ix, (LPARAM)(*it)->c_str());

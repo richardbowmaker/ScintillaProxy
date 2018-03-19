@@ -6,21 +6,6 @@
 
 // The GHCI manager class //
 
-void CGhciManager::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
-{
-	// if the source of the message is either the editor or its parent
-	// then pass it on
-	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
-
-	for (SGhcisT::iterator itr = m_ghcis.begin(); itr != m_ghcis.end(); ++itr)
-	{
-		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
-		{
-			(*itr)->WndProcRetHook(nCode, wParam, lParam);
-		}
-	}
-}
-
 CGhciManager::CGhciManager() : m_hdll(NULL)
 {
 }
@@ -43,6 +28,30 @@ void CGhciManager::Uninitialise()
 		(*itr)->Uninitialise();
 	}
 	m_ghcis.clear();
+}
+
+void CGhciManager::WndProcRetHook(LPCWPRETSTRUCT pData)
+{
+	// if the source of the message is either the editor or its parent
+	// then pass it on
+	for (SGhcisT::iterator itr = m_ghcis.begin(); itr != m_ghcis.end(); ++itr)
+	{
+		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
+		{
+			(*itr)->WndProcRetHook(pData);
+		}
+	}
+}
+
+void CGhciManager::GetMsgProc(LPMSG pData)
+{
+	for (SGhcisT::iterator itr = m_ghcis.begin(); itr != m_ghcis.end(); ++itr)
+	{
+		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
+		{
+			(*itr)->GetMsgProc(pData);
+		}
+	}
 }
 
 HWND CGhciManager::NewGhci(HWND parent, char* options, char* file)

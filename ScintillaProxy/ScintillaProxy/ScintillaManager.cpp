@@ -82,7 +82,7 @@ LRESULT CScintillaManager::SendEditor(HWND scintilla, UINT Msg, WPARAM wParam, L
 	return 0;
 }
 
-void CScintillaManager::SetEventHandler(HWND scintilla, void* callback)
+void CScintillaManager::SetEventHandler(HWND scintilla, CScintillaEditor::EventHandlerT callback)
 {
 	for (EditorsT::iterator itr = m_editors.begin(); itr != m_editors.end(); ++itr)
 	{
@@ -118,20 +118,42 @@ void CScintillaManager::DisableEvents(HWND scintilla)
 	}
 }
 
-void CScintillaManager::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+void CScintillaManager::AddPopupMenuItem(HWND scintilla, int id, char* title, CScintillaEditor::MenuHandlerT callback)
+{
+	for (EditorsT::iterator itr = m_editors.begin(); itr != m_editors.end(); ++itr)
+	{
+		if ((*itr)->GetHwnd() == scintilla)
+		{
+			(*itr)->AddPopupMenuItem(id, title, callback);
+			return;
+		}
+	}
+}
+
+void CScintillaManager::WndProcRetHook(LPCWPRETSTRUCT pData)
 {
 	// if the source of the message is either the editor or its parent
 	// then pass it on
-	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
-
 	for (EditorsT::iterator itr = m_editors.begin(); itr != m_editors.end(); ++itr)
 	{
 		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
 		{
-			(*itr)->WndProcRetHook(nCode, wParam, lParam);
+			(*itr)->WndProcRetHook(pData);
 		}
 	}
 }
+
+void CScintillaManager::GetMsgProc(LPMSG pData)
+{
+	for (EditorsT::iterator itr = m_editors.begin(); itr != m_editors.end(); ++itr)
+	{
+		if ((*itr)->GetHwnd() == pData->hwnd || (*itr)->GetParentHwnd() == pData->hwnd)
+		{
+			(*itr)->GetMsgProc(pData);
+		}
+	}
+}
+
 
 
 

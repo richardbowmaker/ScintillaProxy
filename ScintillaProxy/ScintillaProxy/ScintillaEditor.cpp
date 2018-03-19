@@ -9,8 +9,10 @@
 #include <SciLexer.h>
 #include <tchar.h>
 #include <Windows.h>
+#include <Windowsx.h>
 
 #include "ScintillaEditor.h"
+#include "CUtils.h"
 
 CScintillaEditor::CScintillaEditor() :
 	m_scintilla(NULL),
@@ -18,7 +20,8 @@ CScintillaEditor::CScintillaEditor() :
 	m_notify(NULL),
 	m_eventsEnabled(false),
 	m_direct(NULL),
-	m_sptr(NULL)
+	m_sptr(NULL),
+	m_popup(NULL)
 {
 }
 
@@ -83,6 +86,13 @@ HWND CScintillaEditor::Initialise(HWND parent)
 
 void CScintillaEditor::Uninitialise()
 {
+	if (m_popup)
+	{
+		::DestroyMenu(m_popup);
+		m_popup = NULL;
+		m_menuItems.clear();
+	}
+
 	if (m_scintilla)
 	{
 		DisableEvents();
@@ -102,14 +112,14 @@ LRESULT CScintillaEditor::SendEditor(UINT Msg, WPARAM wParam, LPARAM lParam)
 	return lr;
 }
 
-void CScintillaEditor::SetEventHandler(void* callback)
+void CScintillaEditor::SetEventHandler(EventHandlerT callback)
 {
 	if (callback == 0)
 	{
 		// to be safe
 		m_eventsEnabled = false;
 	}
-	m_notify = (EventHandlerT)callback;
+	m_notify = callback;
 }
 
 void CScintillaEditor::EnableEvents()
@@ -122,13 +132,37 @@ void CScintillaEditor::DisableEvents()
 	m_eventsEnabled = false;
 }
 
-void CScintillaEditor::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
+void CScintillaEditor::AddPopupMenuItem(int id, char* title, MenuHandlerT callback)
 {
-	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
-
-	switch (pData->message)
+	if (!m_popup) m_popup = ::CreatePopupMenu();
+	if (m_popup)
 	{
-	case WM_NOTIFY:
+		::AppendMenu(m_popup, MF_ENABLED | MF_STRING, id, CUtils::ToStringT(title).c_str());
+
+		SMenu menu;
+		menu.id = id;
+		menu.notify = callback;
+		m_menuItems.push_back(menu);
+	}
+}
+
+void CScintillaEditor::WndProcRetHook(LPCWPRETSTRUCT pData)
+{
+	if (m_parent == pData->hwnd)
+	{
+		switch (pData->message)
+		{
+		case WM_CONTEXTMENU:
+		{
+			if (m_popup)
+			{
+				int x = GET_X_LPARAM(pData->lParam);
+				int y = GET_Y_LPARAM(pData->lParam);
+				::TrackPopupMenu(m_popup, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, x, y, 0, m_scintilla, 0);
+			}
+		}
+		break;
+		case WM_NOTIFY:
 		{
 			// notify haskell
 			if (m_eventsEnabled && m_notify != NULL)
@@ -139,18 +173,38 @@ void CScintillaEditor::WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		break;
-	case WM_SIZE:
+		case WM_SIZE:
 		{
-			if (m_parent == pData->hwnd)
+
+			int w = (int)(pData->lParam) & 0x0ffff;
+			int h = (int)(pData->lParam) >> 16;
+			::MoveWindow(m_scintilla, 0, 0, w, h, TRUE);
+		}
+		break;
+		default:
+			break;
+		}
+	}
+}
+
+void CScintillaEditor::GetMsgProc(LPMSG pData)
+{
+	if (m_scintilla == pData->hwnd)
+	{
+		switch (pData->message)
+		{
+		case WM_COMMAND:
+		{
+			int id = LOWORD(pData->wParam);
+			for (SMenusT::iterator itr = m_menuItems.begin(); itr != m_menuItems.end(); ++itr)
 			{
-				int w = (int)(pData->lParam) & 0x0ffff;
-				int h = (int)(pData->lParam) >> 16;
-				::MoveWindow(m_scintilla, 0, 0, w, h, TRUE);
+				if (itr->id == id) (itr->notify)(id);
 			}
 		}
 		break;
-	default:
-		break;
+		default:
+			break;
+		}
 	}
 }
 

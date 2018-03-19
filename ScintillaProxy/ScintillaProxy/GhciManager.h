@@ -34,7 +34,8 @@ public:
 	int GetTextLength(HWND hwnd);
 	int GetText(HWND hwnd, char* buff, int size);
 	void Clear(HWND hwnd);
-	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
+	void WndProcRetHook(LPCWPRETSTRUCT pData);
+	void GetMsgProc(LPMSG pData);
 
 private:
 

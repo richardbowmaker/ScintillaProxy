@@ -18,18 +18,35 @@
 CGhciManager		ghciMgr;
 CScintillaManager	scintillaMgr;
 
-HHOOK winHook = 0; // the windows hook to capture windows messages
+HHOOK winHookRet  = 0; // the windows hook to capture windows messages
+HHOOK winHookPost = 0; 
 
 LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
+	LPCWPRETSTRUCT pData = reinterpret_cast<LPCWPRETSTRUCT>(lParam);
+
 	if (nCode < 0)
 	{
-		return CallNextHookEx(winHook, nCode, wParam, lParam);
+		return CallNextHookEx(winHookRet, nCode, wParam, lParam);
 	}
 
-	ghciMgr.WndProcRetHook(nCode, wParam, lParam);
-	scintillaMgr.WndProcRetHook(nCode, wParam, lParam);
-	return CallNextHookEx(winHook, nCode, wParam, lParam);
+	ghciMgr.WndProcRetHook(pData);
+	scintillaMgr.WndProcRetHook(pData);
+	return CallNextHookEx(winHookRet, nCode, wParam, lParam);
+}
+
+LRESULT CALLBACK GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	LPMSG pData = reinterpret_cast<LPMSG>(lParam);
+
+	if (nCode < 0)
+	{
+		return CallNextHookEx(winHookPost, nCode, wParam, lParam);
+	}
+
+	ghciMgr.GetMsgProc(pData);
+	scintillaMgr.GetMsgProc(pData);
+	return CallNextHookEx(winHookPost, nCode, wParam, lParam);
 }
 
 // Initialise the DLL
@@ -39,18 +56,21 @@ void Initialise()
 	ghciMgr.Initialise();
 
 	// add windows hook if this is the first editor
-	if (winHook == 0)
+	if (winHookRet == 0)
 	{
-		winHook = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
+		winHookRet  = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
+		winHookPost = SetWindowsHookEx(WH_GETMESSAGE,     &GetMsgProc,     0, ::GetCurrentThreadId());
 	}
 }
 
 void Uninitialise()
 {
-	if (winHook != 0)
+	if (winHookRet != 0)
 	{
-		UnhookWindowsHookEx(winHook);
-		winHook = 0;
+		UnhookWindowsHookEx(winHookRet);
+		UnhookWindowsHookEx(winHookPost);
+		winHookRet  = 0;
+		winHookPost = 0;
 	}
 
 	scintillaMgr.Uninitialise();
@@ -75,7 +95,7 @@ LRESULT ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 void ScnSetEventHandler(HWND scintilla, void* callback)
 {
-	return scintillaMgr.SetEventHandler(scintilla, callback);
+	return scintillaMgr.SetEventHandler(scintilla, (CScintillaEditor::EventHandlerT)callback);
 }
 
 void ScnEnableEvents(HWND scintilla)
@@ -86,6 +106,11 @@ void ScnEnableEvents(HWND scintilla)
 void ScnDisableEvents(HWND scintilla)
 {
 	scintillaMgr.DisableEvents(scintilla);
+}
+
+void ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* callback)
+{
+	scintillaMgr.AddPopupMenuItem(scintilla, id, title, (CScintillaEditor::MenuHandlerT)callback);
 }
 
 HWND GhciNew(HWND parent, char* options, char* file)

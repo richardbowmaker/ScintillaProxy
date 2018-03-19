@@ -39,6 +39,9 @@
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\CUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\stdafx.cpp">
@@ -60,6 +63,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\CUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

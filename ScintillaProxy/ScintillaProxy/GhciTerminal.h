@@ -2,8 +2,8 @@
 
 #include <RichEdit.h>
 #include <tchar.h>
-#include <vector>
-#include <string>
+#include "CUtils.h"
+
 
 // Terminal window in which an external processes stdin and stdouty are echoed
 
@@ -15,16 +15,7 @@ class CGhciTerminal
 {
 public:
 
-#ifdef _UNICODE
-	typedef std::wstring StringT;
-	typedef std::vector<StringT> StringsT;
-#else
-	typedef std::string StringT;
-	typedef std::vector<StringT> StringsT;
-#endif
-
 	typedef void* (*EventHandlerT)(HWND, int);
-
 
 	CGhciTerminal();
 	~CGhciTerminal();
@@ -39,15 +30,15 @@ public:
 	void Copy();
 	void SelectAll();
 	void ClearText();
-	void SetText(StringT text);
-	void AddText(StringT text);
-	void AddLine(StringT text);
-	void AddTextTS(StringT text); // non-blocking, thread safe
+	void SetText(CUtils::StringT text);
+	void AddText(CUtils::StringT text);
+	void AddLine(CUtils::StringT text);
+	void AddTextTS(CUtils::StringT text); // non-blocking, thread safe
 	void NewLine();
 	HWND GetHwnd() const;
 	HWND GetParentHwnd() const;
 	int GetNoOfChars();
-	void SendCommand(StringT text);
+	void SendCommand(CUtils::StringT text);
 	void SendCommand(char* cmd);
 	bool IsTextSelected();
 	bool HasFocus();
@@ -55,10 +46,8 @@ public:
 	int GetTextLength();
 	int GetText(char* buff, int size);
 	void Clear();
-
-
-	void WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam);
-
+	void WndProcRetHook(LPCWPRETSTRUCT pData);
+	void GetMsgProc(LPMSG pData);
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
 	void ReadAndHandleOutput();
@@ -66,17 +55,12 @@ public:
 private:
 
 	void Notify(int event);
-	void UpdateCommandLine(StringT text);
-	StringT GetCommandLine();
+	void UpdateCommandLine(CUtils::StringT text);
+	CUtils::StringT GetCommandLine();
 	void SetCommandLineFromList();
 	void ShowLookup();
 	void HideLookup();
 	void ToggleLookup();
-	bool StringStartsWith(StringT str, StringT start);
-	StringT StringRemoveAt(StringT str, unsigned int start, unsigned int len = 1);
-	StringT ToStringT(char* p);
-	StringT ToStringT(wchar_t* p);
-	std::string ToChar(StringT& s);
 
 	CGhciManager* m_mgr;
 	EventHandlerT m_notify;
@@ -86,8 +70,8 @@ private:
 	HWND m_hwndLookup;
 	int	 m_noOfChars;	// no. of chars displayed excluding current command being typed by user
 						// prevents backspacing before start of new line
-	StringsT m_cmdHistory;
-	int		 m_hix;
+	CUtils::StringsT m_cmdHistory;
+	int m_hix;
 
 	//--------------------
 
@@ -101,6 +85,8 @@ private:
 	HANDLE m_hChildProcess;
 	HANDLE m_hInputWrite;
 	HANDLE m_hOutputRead;
+
+	HMENU m_popup;
 
 	enum EventsT
 	{

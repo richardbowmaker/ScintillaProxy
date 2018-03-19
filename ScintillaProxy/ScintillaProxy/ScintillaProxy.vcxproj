@@ -152,6 +152,7 @@
     <Text Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\CUtils.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\GhciManager.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\GhciTerminal.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaEditor.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\CUtils.cpp" />
     <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
