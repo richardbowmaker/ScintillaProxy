@@ -20,7 +20,7 @@ extern "C"
 	SCINTILLAPROXY_API void		__cdecl ScnSetEventHandler(HWND scintilla, void* callback);
 	SCINTILLAPROXY_API void		__cdecl ScnEnableEvents(HWND scintilla);
 	SCINTILLAPROXY_API void		__cdecl ScnDisableEvents(HWND scintilla);
-	SCINTILLAPROXY_API void		__cdecl ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* callback);
+	SCINTILLAPROXY_API void		__cdecl ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* handler, void* enabled);
 
 	SCINTILLAPROXY_API HWND __cdecl GhciNew(HWND parent, char* options, char* file);
 	SCINTILLAPROXY_API void __cdecl GhciSetEventHandler(HWND hwnd, void* callback);

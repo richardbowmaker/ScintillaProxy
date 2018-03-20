@@ -118,13 +118,15 @@ void CScintillaManager::DisableEvents(HWND scintilla)
 	}
 }
 
-void CScintillaManager::AddPopupMenuItem(HWND scintilla, int id, char* title, CScintillaEditor::MenuHandlerT callback)
+void CScintillaManager::AddPopupMenuItem(HWND scintilla, int id, char* title,
+	CScintillaEditor::MenuHandlerT handler,
+	CScintillaEditor::MenuEnabledT enabled)
 {
 	for (EditorsT::iterator itr = m_editors.begin(); itr != m_editors.end(); ++itr)
 	{
 		if ((*itr)->GetHwnd() == scintilla)
 		{
-			(*itr)->AddPopupMenuItem(id, title, callback);
+			(*itr)->AddPopupMenuItem(id, title, handler, enabled);
 			return;
 		}
 	}

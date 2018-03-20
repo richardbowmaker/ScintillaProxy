@@ -23,7 +23,9 @@ public:
 	void	SetEventHandler(HWND scintilla, CScintillaEditor::EventHandlerT callback);
 	void	EnableEvents(HWND scintilla);
 	void	DisableEvents(HWND scintilla);
-	void    AddPopupMenuItem(HWND scintilla, int id, char* title, CScintillaEditor::MenuHandlerT callback);
+	void    AddPopupMenuItem(HWND scintilla, int id, char* title, 
+				CScintillaEditor::MenuHandlerT handler,
+				CScintillaEditor::MenuEnabledT enabled);
 
 	void	WndProcRetHook(LPCWPRETSTRUCT pData);
 	void    GetMsgProc(LPMSG pData);

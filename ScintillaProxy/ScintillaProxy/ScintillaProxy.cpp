@@ -108,9 +108,11 @@ void ScnDisableEvents(HWND scintilla)
 	scintillaMgr.DisableEvents(scintilla);
 }
 
-void ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* callback)
+void ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* handler, void* enabled)
 {
-	scintillaMgr.AddPopupMenuItem(scintilla, id, title, (CScintillaEditor::MenuHandlerT)callback);
+	scintillaMgr.AddPopupMenuItem(scintilla, id, title, 
+		(CScintillaEditor::MenuHandlerT)handler,
+		(CScintillaEditor::MenuEnabledT)enabled);
 }
 
 HWND GhciNew(HWND parent, char* options, char* file)

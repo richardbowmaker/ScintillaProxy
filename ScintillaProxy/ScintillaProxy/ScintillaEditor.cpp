@@ -132,7 +132,7 @@ void CScintillaEditor::DisableEvents()
 	m_eventsEnabled = false;
 }
 
-void CScintillaEditor::AddPopupMenuItem(int id, char* title, MenuHandlerT callback)
+void CScintillaEditor::AddPopupMenuItem(int id, char* title, MenuHandlerT handler, MenuEnabledT enabled)
 {
 	if (!m_popup) m_popup = ::CreatePopupMenu();
 	if (m_popup)
@@ -141,7 +141,8 @@ void CScintillaEditor::AddPopupMenuItem(int id, char* title, MenuHandlerT callba
 
 		SMenu menu;
 		menu.id = id;
-		menu.notify = callback;
+		menu.handler = handler;
+		menu.enabled = enabled;
 		m_menuItems.push_back(menu);
 	}
 }
@@ -156,6 +157,11 @@ void CScintillaEditor::WndProcRetHook(LPCWPRETSTRUCT pData)
 		{
 			if (m_popup)
 			{
+				for (SMenusT::iterator itr = m_menuItems.begin(); itr != m_menuItems.end(); ++itr)
+				{
+					BOOL enabled = (itr->enabled)(itr->id) ? MF_ENABLED : MF_DISABLED;
+					::EnableMenuItem(m_popup, itr->id, enabled);
+				}
 				int x = GET_X_LPARAM(pData->lParam);
 				int y = GET_Y_LPARAM(pData->lParam);
 				::TrackPopupMenu(m_popup, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON, x, y, 0, m_scintilla, 0);
@@ -195,10 +201,18 @@ void CScintillaEditor::GetMsgProc(LPMSG pData)
 		{
 		case WM_COMMAND:
 		{
+			// hack to remove double notifications, seems to be a problem in wxHaskell
+			static DWORD t = 0;
+			if (t == pData->time) return;
+			t = pData->time;
+
 			int id = LOWORD(pData->wParam);
 			for (SMenusT::iterator itr = m_menuItems.begin(); itr != m_menuItems.end(); ++itr)
 			{
-				if (itr->id == id) (itr->notify)(id);
+				if (itr->id == id)
+				{
+					(itr->handler)(id);
+				}
 			}
 		}
 		break;

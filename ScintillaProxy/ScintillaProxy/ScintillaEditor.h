@@ -12,6 +12,7 @@ public:
 
 	typedef void* (*EventHandlerT)(SCNotification*);
 	typedef void* (*MenuHandlerT)(int);
+	typedef int (*MenuEnabledT)(int);
 	typedef unsigned __int64(__cdecl *ScintillaDirect)(void*, int, __int64, unsigned __int64);
 
 	HWND	Initialise(HWND parent);
@@ -20,7 +21,7 @@ public:
 	void	SetEventHandler(EventHandlerT callback);
 	void	EnableEvents();
 	void	DisableEvents();
-	void    AddPopupMenuItem(int id, char* title, MenuHandlerT callback);
+	void    AddPopupMenuItem(int id, char* title, MenuHandlerT handler, MenuEnabledT enabled);
 	void    WndProcRetHook(LPCWPRETSTRUCT pData);
 	void    GetMsgProc(LPMSG pData);
 	void	ConfigureEditorHaskell();
@@ -33,7 +34,8 @@ private:
 	struct SMenu
 	{
 		int	id;
-		MenuHandlerT notify;
+		MenuHandlerT handler;
+		MenuEnabledT enabled;
 	};
 	typedef std::vector<SMenu> SMenusT;
 
