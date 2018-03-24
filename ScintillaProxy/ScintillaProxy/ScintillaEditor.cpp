@@ -71,16 +71,7 @@ HWND CScintillaEditor::Initialise(HWND parent)
 		RECT r;
 		::GetWindowRect(parent, &r);
 		::MoveWindow(scintilla, 0, 0, r.right - r.left, r.bottom - r.top, TRUE);
-
-		OutputDebugString(_T("::CreateWindow OK, Scintilla editor\n"));
-
-		//		ConfigureEditorHaskell(scintilla);
 	}
-	else
-	{
-		OutputDebugString(_T("*** ::CreateWindow failed, Scintilla editor ***\n"));
-	}
-
 	return scintilla;
 }
 

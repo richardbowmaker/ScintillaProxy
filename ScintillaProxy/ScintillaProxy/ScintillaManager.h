@@ -15,7 +15,7 @@ public:
 	CScintillaManager();
 	~CScintillaManager();
 
-	void	Initialise();
+	bool	Initialise();
 	void	Uninitialise();
 	HWND	NewEditor(HWND parent);
 	void	DestroyEditor(HWND scintilla);
@@ -33,5 +33,6 @@ public:
 private:
 
 	EditorsT m_editors;
+	HMODULE m_hdll;
 };
 

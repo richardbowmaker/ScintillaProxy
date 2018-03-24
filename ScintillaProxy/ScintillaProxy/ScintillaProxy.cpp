@@ -20,6 +20,7 @@ CScintillaManager	scintillaMgr;
 
 HHOOK winHookRet  = 0; // the windows hook to capture windows messages
 HHOOK winHookPost = 0; 
+bool isInitialised = false;
 
 LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -49,18 +50,36 @@ LRESULT CALLBACK GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam)
 	return CallNextHookEx(winHookPost, nCode, wParam, lParam);
 }
 
-// Initialise the DLL
-void Initialise()
+BOOL ScintillaProxyInitialise()
 {
-	scintillaMgr.Initialise();
-	ghciMgr.Initialise();
+	return (BOOL)Initialise();
+}
 
-	// add windows hook if this is the first editor
-	if (winHookRet == 0)
+void ScintillaProxyUninitialise()
+{
+	Uninitialise();
+}
+
+// Initialise the DLL
+bool Initialise()
+{
+	if (!isInitialised)
 	{
+		bool sok = scintillaMgr.Initialise();
+		bool gok = ghciMgr.Initialise();
 		winHookRet  = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
-		winHookPost = SetWindowsHookEx(WH_GETMESSAGE,     &GetMsgProc,     0, ::GetCurrentThreadId());
+		winHookPost = SetWindowsHookEx(WH_GETMESSAGE, &GetMsgProc, 0, ::GetCurrentThreadId());
+
+		if (sok && gok && winHookRet != 0 && winHookPost != 0)
+		{ 
+			isInitialised = true;
+		}
+		else
+		{
+			Uninitialise();
+		}
 	}
+	return isInitialised;
 }
 
 void Uninitialise()
@@ -68,13 +87,16 @@ void Uninitialise()
 	if (winHookRet != 0)
 	{
 		UnhookWindowsHookEx(winHookRet);
+		winHookRet = 0;
+	}
+	if (winHookPost != 0)
+	{
 		UnhookWindowsHookEx(winHookPost);
-		winHookRet  = 0;
 		winHookPost = 0;
 	}
-
 	scintillaMgr.Uninitialise();
 	ghciMgr.Uninitialise();
+	isInitialised = false;
 }
 
 // start a new scintilla editor window

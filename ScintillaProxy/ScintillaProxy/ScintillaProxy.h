@@ -14,6 +14,9 @@
 // interface for haskell
 extern "C"
 {
+	SCINTILLAPROXY_API BOOL		__cdecl ScintillaProxyInitialise();
+	SCINTILLAPROXY_API void		__cdecl ScintillaProxyUninitialise();
+
 	SCINTILLAPROXY_API HWND		__cdecl ScnNewEditor(HWND parent);
 	SCINTILLAPROXY_API void		__cdecl ScnDestroyEditor(HWND scintilla);
 	SCINTILLAPROXY_API LRESULT	__cdecl ScnSendEditor(HWND scintilla, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -42,7 +45,7 @@ extern "C"
 
 
 // internal functions
-void Initialise();
+bool Initialise();
 void Uninitialise();
 
 

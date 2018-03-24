@@ -28,6 +28,10 @@ void CGhciManager::Uninitialise()
 		(*itr)->Uninitialise();
 	}
 	m_ghcis.clear();
+	if (m_hdll)
+	{
+		::FreeLibrary(m_hdll);
+	}
 }
 
 void CGhciManager::WndProcRetHook(LPCWPRETSTRUCT pData)

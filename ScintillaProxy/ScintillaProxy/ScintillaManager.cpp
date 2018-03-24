@@ -5,7 +5,7 @@
 
 #include "ScintillaManager.h"
 
-CScintillaManager::CScintillaManager()
+CScintillaManager::CScintillaManager() : m_hdll(NULL)
 {
 }
 
@@ -14,20 +14,11 @@ CScintillaManager::~CScintillaManager()
 	Uninitialise();
 }
 
-void CScintillaManager::Initialise()
+bool CScintillaManager::Initialise()
 {
 	m_editors.clear();
-
-	HMODULE hLib = ::LoadLibrary(_T("SciLexer64.DLL"));
-
-	if (hLib != 0)
-	{
-		OutputDebugString(_T("Loaded SCI Lexer DLL 64 bits"));
-	}
-	else
-	{
-		OutputDebugString(_T("*** Failed to load SCI Lexer DLL 64 bits ***"));
-	}
+	m_hdll = ::LoadLibrary(_T("SciLexer64.DLL"));
+	return m_hdll != NULL;
 }
 
 void CScintillaManager::Uninitialise()
@@ -37,6 +28,10 @@ void CScintillaManager::Uninitialise()
 		(*itr)->Uninitialise();
 	}
 	m_editors.clear();
+	if (m_hdll)
+	{
+		::FreeLibrary(m_hdll);
+	}
 }
 
 HWND CScintillaManager::NewEditor(HWND parent)
