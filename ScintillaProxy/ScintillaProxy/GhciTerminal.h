@@ -15,7 +15,7 @@ class CGhciTerminal
 {
 public:
 
-	typedef void* (*EventHandlerT)(HWND, int);
+	typedef void* (*EventHandlerT)(HWND, int, const char*);
 
 	CGhciTerminal();
 	~CGhciTerminal();
@@ -54,7 +54,7 @@ public:
 
 private:
 
-	void Notify(int event);
+	void Notify(int event, CUtils::StringT text = _T(""));
 	void UpdateCommandLine(CUtils::StringT text);
 	CUtils::StringT GetCommandLine();
 	void SetCommandLineFromList();
@@ -94,7 +94,9 @@ private:
 		EventLostFocus = 2,
 		EventSelectionSet = 3,
 		EventSelectionClear = 4,
-		EventClosed = 5
+		EventClosed = 5,
+		EventOutput = 6,
+		EventInput = 7
 	};
 };
 

@@ -9,8 +9,6 @@ bool CUtils::StringStartsWith(StringT str, StringT start)
 {
 	if (str.size() == 0 || start.size() == 0) return false;
 	StringT s = str.substr(0, start.size());
-	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-	std::transform(start.begin(), start.end(), start.begin(), ::toupper);
 	return s == start;
 }
 

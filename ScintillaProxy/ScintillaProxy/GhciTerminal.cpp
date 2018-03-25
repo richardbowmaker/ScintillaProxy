@@ -242,11 +242,23 @@ CUtils::StringT CGhciTerminal::GetCommandLine()
 	}
 }
 
-void CGhciTerminal::Notify(int event)
+void CGhciTerminal::Notify(int event, CUtils::StringT text)
 {
 	if (m_eventsEnabled && m_notify != NULL)
 	{
-		m_notify(m_hwnd, event);
+		switch (event)
+		{
+		case EventOutput:
+		case EventInput:
+		{
+			// copy text to heap
+			std::string str = CUtils::ToChar(text);
+			m_notify(m_hwnd, event, str.c_str());
+		}
+			break;
+		default:
+			m_notify(m_hwnd, event, NULL);
+		}
 	}
 }
 
@@ -470,6 +482,8 @@ void CGhciTerminal::SendCommand(CUtils::StringT text)
 		}
 	}
 	m_hix = -1;
+
+	Notify(EventInput, text + _T("\n"));
 }
 
 void CGhciTerminal::SendCommand(char* cmd)
@@ -666,8 +680,10 @@ void CGhciTerminal::ReadAndHandleOutput()
 		if (nBytesRead > 0)
 		{
 			lpBuffer[nBytesRead] = 0;
-			AddTextTS(CUtils::ToStringT(lpBuffer));
+			CUtils::StringT str = CUtils::ToStringT(lpBuffer);
+			AddTextTS(str);
 			m_noOfChars = GetNoOfChars();
+			Notify(EventOutput, str);
 		}
 	}
 }
