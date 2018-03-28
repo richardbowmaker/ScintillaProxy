@@ -20,7 +20,7 @@ public:
 	CGhciTerminal();
 	~CGhciTerminal();
 
-	bool Initialise(CGhciManager* mgr, HWND hParent, char* options, char* file);
+	bool Initialise(HWND hParent, char* options, char* file);
 	void Uninitialise();
 	void SetEventHandler(EventHandlerT callback);
 	void EnableEvents();
@@ -62,7 +62,7 @@ private:
 	void HideLookup();
 	void ToggleLookup();
 
-	CGhciManager* m_mgr;
+	bool m_initialised;
 	EventHandlerT m_notify;
 	bool m_eventsEnabled;
 	HWND m_hwnd;
@@ -85,6 +85,7 @@ private:
 	HANDLE m_hChildProcess;
 	HANDLE m_hInputWrite;
 	HANDLE m_hOutputRead;
+	volatile bool m_threadStopped;
 
 	HMENU m_popup;
 

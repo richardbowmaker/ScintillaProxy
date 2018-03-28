@@ -69,7 +69,7 @@ HWND CGhciManager::NewGhci(HWND parent, char* options, char* file)
 
 	// start a new GHCI terminal
 	CGhciTerminalPtrT ptrGhci = CGhciTerminalPtrT(new CGhciTerminal);
-	if (ptrGhci->Initialise(this, parent, options, file))
+	if (ptrGhci->Initialise(parent, options, file))
 	{
 		// add to list and return it
 		m_ghcis.push_back(ptrGhci);

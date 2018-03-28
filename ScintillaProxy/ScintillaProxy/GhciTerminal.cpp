@@ -26,7 +26,7 @@ LRESULT CALLBACK RichTextBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
 }
 
 CGhciTerminal::CGhciTerminal() :
-	m_mgr(NULL),
+	m_initialised(NULL),
 	m_notify(NULL),
 	m_eventsEnabled(false),
 	m_hwnd(NULL),
@@ -36,7 +36,8 @@ CGhciTerminal::CGhciTerminal() :
 	m_hOutputRead(NULL),
 	m_noOfChars(0),
 	m_hwndLookup(NULL),
-	m_popup(NULL)
+	m_popup(NULL),
+	m_threadStopped(false)
 {
 }
 
@@ -45,69 +46,75 @@ CGhciTerminal::~CGhciTerminal()
 	Uninitialise();
 }
 
-bool CGhciTerminal::Initialise(CGhciManager* mgr, HWND hParent, char* options, char* file)
+bool CGhciTerminal::Initialise(HWND hParent, char* options, char* file)
 {
-	m_mgr = mgr;
-	m_parent = hParent;
-	m_hwnd = ::CreateWindowExW(0, MSFTEDIT_CLASS, L"",
-		ES_MULTILINE | WS_HSCROLL | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_TABSTOP,
-		0, 0, 0, 0, hParent, NULL, NULL, NULL);
-
-	if (m_hwnd)
+	if (!m_initialised)
 	{
-		RECT r;
-		::GetClientRect(hParent, &r);
-		::MoveWindow(m_hwnd, 0, 0, r.right - r.left, r.bottom - r.top, TRUE);
+		m_parent = hParent;
+		m_hwnd = ::CreateWindowExW(0, MSFTEDIT_CLASS, L"",
+			ES_MULTILINE | WS_HSCROLL | WS_VSCROLL | WS_VISIBLE | WS_CHILD | WS_TABSTOP,
+			0, 0, 0, 0, hParent, NULL, NULL, NULL);
 
-		_charformat cf;
-		ZeroMemory(&cf, sizeof(cf));
-		cf.cbSize = sizeof(_charformat);
-		cf.dwMask = CFM_FACE | CFM_SIZE;
-		cf.yHeight = 180;
-		strncpy_s(cf.szFaceName, LF_FACESIZE, "Courier New", 12); // including terminating 0
-		::SendMessage(m_hwnd, EM_SETCHARFORMAT, SCF_ALL | SCF_DEFAULT, (LPARAM)&cf);
+		if (m_hwnd)
+		{
+			RECT r;
+			::GetClientRect(hParent, &r);
+			::MoveWindow(m_hwnd, 0, 0, r.right - r.left, r.bottom - r.top, TRUE);
 
-		// subclass the rich edit text control
-		::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
+			_charformat cf;
+			ZeroMemory(&cf, sizeof(cf));
+			cf.cbSize = sizeof(_charformat);
+			cf.dwMask = CFM_FACE | CFM_SIZE;
+			cf.yHeight = 180;
+			strncpy_s(cf.szFaceName, LF_FACESIZE, "Courier New", 12); // including terminating 0
+			::SendMessage(m_hwnd, EM_SETCHARFORMAT, SCF_ALL | SCF_DEFAULT, (LPARAM)&cf);
 
-	
-		StartCommand(options, file);
+			// subclass the rich edit text control
+			::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
 
-		return true;
+			m_initialised = true;
+
+			// must follow m_initialised = true
+			StartCommand(options, file);
+		}
 	}
-	else
-	{
-		return false;
-	}
+	return m_initialised;
 }
 
 void CGhciTerminal::Uninitialise()
 {
-	Notify(EventClosed);
-	m_eventsEnabled = false;
-	::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, 0);
-
-	if (m_hChildProcess)
+	if (m_initialised)
 	{
-		SendCommand(_T(":quit\n"));
-		m_hChildProcess = NULL;
-	}
+		Notify(EventClosed);
+		m_eventsEnabled = false;
+		::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, 0);
 
-	HideLookup();
+		if (m_hChildProcess)
+		{
+			SendCommand(_T(":quit\n"));
+			m_hChildProcess = NULL;
+		}
 
-	if (m_popup)
-	{
-		::DestroyMenu(m_popup);
-		m_popup = NULL;
-	}
+		// terminate thread
+		m_initialised = false;
+		while (!m_threadStopped);
 
-	if (m_hwnd)
-	{
-		::CloseWindow(m_hwnd);
-		::DestroyWindow(m_hwnd);
-		m_hwnd = NULL;
+		HideLookup();
+
+		if (m_popup)
+		{
+			::DestroyMenu(m_popup);
+			m_popup = NULL;
+		}
+
+		if (m_hwnd)
+		{
+			::CloseWindow(m_hwnd);
+			::DestroyWindow(m_hwnd);
+			m_hwnd = NULL;
+		}
+		m_cmdHistory.clear();
 	}
-	m_cmdHistory.clear();
 }
 
 
@@ -674,10 +681,10 @@ void CGhciTerminal::ReadAndHandleOutput()
 	CHAR lpBuffer[256];
 	DWORD nBytesRead;
 
-	while (TRUE)
+	while (m_initialised)
 	{
 		ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL);
-		if (nBytesRead > 0)
+		if (m_initialised && nBytesRead > 0)
 		{
 			lpBuffer[nBytesRead] = 0;
 			CUtils::StringT str = CUtils::ToStringT(lpBuffer);
@@ -686,6 +693,8 @@ void CGhciTerminal::ReadAndHandleOutput()
 			Notify(EventOutput, str);
 		}
 	}
+	m_threadStopped = true;
+	ExitThread(0);
 }
 
 //---------------------------------------------------------------
