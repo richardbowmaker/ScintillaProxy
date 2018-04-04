@@ -5,41 +5,29 @@
 #include <memory>
 
 #include "GhciTerminal.h"
+#include "Ghci.h"
+
 
 class CGhciManager
 {
 public:
 
-	typedef std::shared_ptr<CGhciTerminal> CGhciTerminalPtrT;
-	typedef std::vector<CGhciTerminalPtrT> SGhcisT;
+	typedef std::shared_ptr<CGhci> CGhciPtrT;
+	typedef std::vector<CGhciPtrT> SGhcisT;
 
 	CGhciManager();
 	~CGhciManager();
 
 	bool Initialise();
 	void Uninitialise();
-	HWND NewGhci(HWND parent, char* options, char* file);
+	HWND New(HWND parent, char* options, char* file);
 	void SetEventHandler(HWND hwnd, CGhciTerminal::EventHandlerT callback);
-	void EnableEvents(HWND hwnd);
-	void DisableEvents(HWND hwnd);
-	void CloseGhci(HWND hwnd);
-	void Paste(HWND hwnd);
-	void Cut(HWND hwnd);
-	void Copy(HWND hwnd);
-	void SelectAll(HWND hwnd);
-	bool HasFocus(HWND hwnd);
-	void SendCommand(HWND hwnd, char* cmd);
-	bool IsTextSelected(HWND hwnd);
-	void SetFocus(HWND hwnd);
-	int GetTextLength(HWND hwnd);
-	int GetText(HWND hwnd, char* buff, int size);
-	void Clear(HWND hwnd);
-	void WndProcRetHook(LPCWPRETSTRUCT pData);
-	void GetMsgProc(LPMSG pData);
+
 
 private:
 
+
 	SGhcisT m_ghcis;
-	HMODULE m_hdll;
+
 };
 

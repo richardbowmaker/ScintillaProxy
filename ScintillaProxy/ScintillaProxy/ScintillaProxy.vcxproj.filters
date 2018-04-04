@@ -42,6 +42,12 @@
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\CUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\Ghci.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GhciTerminalManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\stdafx.cpp">
@@ -66,6 +72,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\CUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\Ghci.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GhciTerminalManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

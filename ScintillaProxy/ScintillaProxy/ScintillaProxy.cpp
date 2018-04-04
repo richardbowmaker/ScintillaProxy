@@ -12,11 +12,13 @@
 
 #include "ScintillaProxy.h"
 #include "GhciManager.h"
+#include "GhciTerminalManager.h"
 #include "GhciTerminal.h"
 #include "ScintillaManager.h"
 
-CGhciManager		ghciMgr;
-CScintillaManager	scintillaMgr;
+CGhciManager			ghciMgr;
+CGhciTerminalManager	ghciTerminalMgr;
+CScintillaManager		scintillaMgr;
 
 HHOOK winHookRet  = 0; // the windows hook to capture windows messages
 HHOOK winHookPost = 0; 
@@ -31,7 +33,7 @@ LRESULT WINAPI WndProcRetHook(int nCode, WPARAM wParam, LPARAM lParam)
 		return CallNextHookEx(winHookRet, nCode, wParam, lParam);
 	}
 
-	ghciMgr.WndProcRetHook(pData);
+	ghciTerminalMgr.WndProcRetHook(pData);
 	scintillaMgr.WndProcRetHook(pData);
 	return CallNextHookEx(winHookRet, nCode, wParam, lParam);
 }
@@ -45,7 +47,7 @@ LRESULT CALLBACK GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam)
 		return CallNextHookEx(winHookPost, nCode, wParam, lParam);
 	}
 
-	ghciMgr.GetMsgProc(pData);
+	ghciTerminalMgr.GetMsgProc(pData);
 	scintillaMgr.GetMsgProc(pData);
 	return CallNextHookEx(winHookPost, nCode, wParam, lParam);
 }
@@ -66,7 +68,7 @@ bool Initialise()
 	if (!isInitialised)
 	{
 		bool sok = scintillaMgr.Initialise();
-		bool gok = ghciMgr.Initialise();
+		bool gok = ghciTerminalMgr.Initialise();
 		winHookRet  = SetWindowsHookEx(WH_CALLWNDPROCRET, &WndProcRetHook, 0, ::GetCurrentThreadId());
 		winHookPost = SetWindowsHookEx(WH_GETMESSAGE, &GetMsgProc, 0, ::GetCurrentThreadId());
 
@@ -95,7 +97,7 @@ void Uninitialise()
 		winHookPost = 0;
 	}
 	scintillaMgr.Uninitialise();
-	ghciMgr.Uninitialise();
+	ghciTerminalMgr.Uninitialise();
 	isInitialised = false;
 }
 
@@ -137,84 +139,84 @@ void ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* handler, voi
 		(CScintillaEditor::MenuEnabledT)enabled);
 }
 
-HWND GhciNew(HWND parent, char* options, char* file)
+HWND GhciTerminalNew(HWND parent, char* options, char* file)
 {
-	return ghciMgr.NewGhci(parent, options, file);
+	return ghciTerminalMgr.New(parent, options, file);
 }
 
-void GhciClose(HWND hwnd)
+void GhciTerminalClose(HWND hwnd)
 {
-	ghciMgr.CloseGhci(hwnd);
+	ghciTerminalMgr.CloseGhci(hwnd);
 }
 
-void GhciPaste(HWND hwnd)
+void GhciTerminalPaste(HWND hwnd)
 {
-	ghciMgr.Paste(hwnd);
+	ghciTerminalMgr.Paste(hwnd);
 }
 
-void GhciCut(HWND hwnd)
+void GhciTerminalCut(HWND hwnd)
 {
-	ghciMgr.Cut(hwnd);
+	ghciTerminalMgr.Cut(hwnd);
 }
 
-void GhciCopy(HWND hwnd)
+void GhciTerminalCopy(HWND hwnd)
 {
-	ghciMgr.Copy(hwnd);
+	ghciTerminalMgr.Copy(hwnd);
 }
 
-void GhciSelectAll(HWND hwnd)
+void GhciTerminalSelectAll(HWND hwnd)
 {
-	ghciMgr.SelectAll(hwnd);
+	ghciTerminalMgr.SelectAll(hwnd);
 }
 
-BOOL GhciHasFocus(HWND hwnd)
+BOOL GhciTerminalHasFocus(HWND hwnd)
 {
-	return (BOOL)ghciMgr.HasFocus(hwnd);
+	return (BOOL)ghciTerminalMgr.HasFocus(hwnd);
 }
 
-void GhciSetEventHandler(HWND hwnd, void* callback)
+void GhciTerminalSetEventHandler(HWND hwnd, void* callback)
 {
-	ghciMgr.SetEventHandler(hwnd, (CGhciTerminal::EventHandlerT)callback);
+	ghciTerminalMgr.SetEventHandler(hwnd, (CGhciTerminal::EventHandlerT)callback);
 }
 
-void GhciEnableEvents(HWND hwnd)
+void GhciTerminalEnableEvents(HWND hwnd)
 {
-	ghciMgr.EnableEvents(hwnd);
+	ghciTerminalMgr.EnableEvents(hwnd);
 }
 
-void GhciDisableEvents(HWND hwnd)
+void GhciTerminalDisableEvents(HWND hwnd)
 {
-	ghciMgr.DisableEvents(hwnd);
+	ghciTerminalMgr.DisableEvents(hwnd);
 }
 
-void GhciSendCommand(HWND hwnd, char* cmd)
+void GhciTerminalSendCommand(HWND hwnd, char* cmd)
 {
-	ghciMgr.SendCommand(hwnd, cmd);
+	ghciTerminalMgr.SendCommand(hwnd, cmd);
 }
 
-BOOL GhciIsTextSelected(HWND hwnd)
+BOOL GhciTerminalIsTextSelected(HWND hwnd)
 {
-	return ghciMgr.IsTextSelected(hwnd);
+	return ghciTerminalMgr.IsTextSelected(hwnd);
 }
 
-void GhciSetFocus(HWND hwnd)
+void GhciTerminalSetFocus(HWND hwnd)
 {
-	ghciMgr.SetFocus(hwnd);
+	ghciTerminalMgr.SetFocus(hwnd);
 }
 
-int GhciGetTextLength(HWND hwnd)
+int GhciTerminalGetTextLength(HWND hwnd)
 {
-	return ghciMgr.GetTextLength(hwnd);
+	return ghciTerminalMgr.GetTextLength(hwnd);
 }
 
-int GhciGetText(HWND hwnd, char* buff, int size)
+int GhciTerminalGetText(HWND hwnd, char* buff, int size)
 {
-	return ghciMgr.GetText(hwnd, buff, size);
+	return ghciTerminalMgr.GetText(hwnd, buff, size);
 }
 
-void GhciClear(HWND hwnd)
+void GhciTerminalClear(HWND hwnd)
 {
-	return ghciMgr.Clear(hwnd);
+	return ghciTerminalMgr.Clear(hwnd);
 }
 
 

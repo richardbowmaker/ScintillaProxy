@@ -25,22 +25,24 @@ extern "C"
 	SCINTILLAPROXY_API void		__cdecl ScnDisableEvents(HWND scintilla);
 	SCINTILLAPROXY_API void		__cdecl ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* handler, void* enabled);
 
-	SCINTILLAPROXY_API HWND __cdecl GhciNew(HWND parent, char* options, char* file);
-	SCINTILLAPROXY_API void __cdecl GhciSetEventHandler(HWND hwnd, void* callback);
-	SCINTILLAPROXY_API void __cdecl GhciEnableEvents(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciDisableEvents(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciClose(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciPaste(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciCut(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciCopy(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciSelectAll(HWND hwnd);
-	SCINTILLAPROXY_API BOOL __cdecl GhciHasFocus(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciSetFocus(HWND hwnd);
-	SCINTILLAPROXY_API void __cdecl GhciSendCommand(HWND hwnd, char* cmd);
-	SCINTILLAPROXY_API BOOL __cdecl GhciIsTextSelected(HWND hwnd);
-	SCINTILLAPROXY_API int  __cdecl GhciGetTextLength(HWND hwnd);
-	SCINTILLAPROXY_API int  __cdecl GhciGetText(HWND hwnd, char* buff, int size);
-	SCINTILLAPROXY_API void __cdecl GhciClear(HWND hwnd);
+	SCINTILLAPROXY_API HWND __cdecl GhciTerminalNew(HWND parent, char* options, char* file);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalSetEventHandler(HWND hwnd, void* callback);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalEnableEvents(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalDisableEvents(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalClose(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalPaste(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalCut(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalCopy(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalSelectAll(HWND hwnd);
+	SCINTILLAPROXY_API BOOL __cdecl GhciTerminalHasFocus(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalSetFocus(HWND hwnd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalSendCommand(HWND hwnd, char* cmd);
+	SCINTILLAPROXY_API BOOL __cdecl GhciTerminalIsTextSelected(HWND hwnd);
+	SCINTILLAPROXY_API int  __cdecl GhciTerminalGetTextLength(HWND hwnd);
+	SCINTILLAPROXY_API int  __cdecl GhciTerminalGetText(HWND hwnd, char* buff, int size);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalClear(HWND hwnd);
+
+
 }
 
 

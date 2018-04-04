@@ -2,8 +2,9 @@
 
 #include <RichEdit.h>
 #include <tchar.h>
-#include "CUtils.h"
 
+#include "CUtils.h"
+#include "Ghci.h"
 
 // Terminal window in which an external processes stdin and stdouty are echoed
 
@@ -37,23 +38,24 @@ public:
 	void NewLine();
 	HWND GetHwnd() const;
 	HWND GetParentHwnd() const;
-	int GetNoOfChars();
-	void SendCommand(CUtils::StringT text);
-	void SendCommand(char* cmd);
+	int  GetNoOfChars();
 	bool IsTextSelected();
 	bool HasFocus();
 	void SetFocus();
-	int GetTextLength();
-	int GetText(char* buff, int size);
+	int  GetTextLength();
+	int  GetText(char* buff, int size);
 	void Clear();
+	void SendCommand(CUtils::StringT text);
+	void SendCommand(char* cmd);
 	void WndProcRetHook(LPCWPRETSTRUCT pData);
 	void GetMsgProc(LPMSG pData);
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
-	void ReadAndHandleOutput();
+	void GhciEventHandler(char* text, void* data);
 
 private:
 
+	CGhci m_ghci;
 	void Notify(int event, CUtils::StringT text = _T(""));
 	void UpdateCommandLine(CUtils::StringT text);
 	CUtils::StringT GetCommandLine();
@@ -73,31 +75,18 @@ private:
 	CUtils::StringsT m_cmdHistory;
 	int m_hix;
 
-	//--------------------
-
-	void StartCommand(char* options, char* file);
-	void PrepAndLaunchRedirectedChild(
-		char* options, char* file,
-		HANDLE hChildStdOut,
-		HANDLE hChildStdIn,
-		HANDLE hChildStdErr);
-
-	HANDLE m_hChildProcess;
-	HANDLE m_hInputWrite;
-	HANDLE m_hOutputRead;
-	volatile bool m_threadStopped;
 
 	HMENU m_popup;
 
 	enum EventsT
 	{
-		EventGotFocus = 1,
-		EventLostFocus = 2,
-		EventSelectionSet = 3,
-		EventSelectionClear = 4,
-		EventClosed = 5,
-		EventOutput = 6,
-		EventInput = 7
+		EventGotFocus		= 0x01,
+		EventLostFocus		= 0x02,
+		EventSelectionSet	= 0x04,
+		EventSelectionClear = 0x08,
+		EventClosed			= 0x10,
+		EventOutput			= 0x20,
+		EventInput			= 0x40
 	};
 };
 
