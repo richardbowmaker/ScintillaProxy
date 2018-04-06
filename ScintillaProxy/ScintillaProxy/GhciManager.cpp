@@ -8,7 +8,7 @@
 
 // The GHCI manager class //
 
-CGhciManager::CGhciManager()
+CGhciManager::CGhciManager() : m_idNext(0)
 {
 }
 
@@ -17,8 +17,15 @@ CGhciManager::~CGhciManager()
 	Uninitialise();
 }
 
+CGhciManager& CGhciManager::Instance()
+{
+	static CGhciManager instance;
+	return instance;
+}
+
 bool CGhciManager::Initialise()
 {
+	return true;
 }
 
 void CGhciManager::Uninitialise()
@@ -28,25 +35,33 @@ void CGhciManager::Uninitialise()
 		(*itr)->Uninitialise();
 	}
 	m_ghcis.clear();
-
 }
 
-HWND CGhciManager::New(HWND parent, char* options, char* file)
+CGhci::CGhci::CGhciPtrT CGhciManager::New(const char* options, const char* file)
 {
-	if (parent == NULL || m_hdll == NULL) return NULL;
-
-	// if parent already has a GHCI terminal return it
-	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return ptrGhci->GetParentHwnd() == parent; });
-	if (itr != m_ghcis.end()) return (*itr)->GetHwnd();
-
-	// start a new GHCI terminal
-	CGhciTerminalPtrT ptrGhci = CGhciTerminalPtrT(new CGhciTerminal);
-	if (ptrGhci->Initialise(parent, options, file))
+	CGhci::CGhciPtrT ptrGhci = CGhci::CGhciPtrT(new CGhci);
+	m_idNext++;
+	if (ptrGhci->Initialise(m_idNext, options, file))
 	{
 		// add to list and return it
 		m_ghcis.push_back(ptrGhci);
-		return ptrGhci->GetHwnd();
+		return ptrGhci;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+CGhci::CGhciPtrT CGhciManager::GetChci(CGhci::IdT id)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
+
+	// uninitialise terminal and remove it
+	if (itr != m_ghcis.end())
+	{
+		return *itr;
 	}
 	else
 	{
@@ -55,10 +70,10 @@ HWND CGhciManager::New(HWND parent, char* options, char* file)
 }
 
 // either the GHCI hwnd or parent will do
-void CGhciManager::Close(HWND hwnd)
+void CGhciManager::Close(CGhci::IdT id)
 {
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
 
 	// uninitialise terminal and remove it
 	if (itr != m_ghcis.end())
@@ -68,14 +83,54 @@ void CGhciManager::Close(HWND hwnd)
 	}
 }
 
-void CGhciManager::SetEventHandler(HWND hwnd, CGhciTerminal::EventHandlerT callback)
+void CGhciManager::SetEventHandler(CGhci::IdT id, CGhci::EventHandlerT callback, void* data)
 {
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
-		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
 
 	if (itr != m_ghcis.end())
 	{
-		(*itr)->SetEventHandler(callback);
+		(*itr)->SetEventHandler(callback, data);
 	}
 }
+
+void CGhciManager::SendCommand(CGhci::IdT id, CUtils::StringT text)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->SendCommand(text);
+	}
+}
+
+void CGhciManager::SendCommand(CGhci::IdT id, const char* cmd)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
+
+	if (itr != m_ghcis.end())
+	{
+		(*itr)->SendCommand(cmd);
+	}
+}
+
+// send command 'cmd' and wait till the returned output ends with 'eod'
+// returns false if no eod after timeout ms
+bool CGhciManager::SendCommandSynch(CGhci::IdT id, const char* cmd, const char* eod, DWORD timeout, const char** output)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->SendCommandSynch(cmd, eod, timeout, output);
+	}
+	else
+	{
+		return false;
+	}
+}
+
 

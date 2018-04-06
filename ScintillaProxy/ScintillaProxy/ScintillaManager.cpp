@@ -14,6 +14,12 @@ CScintillaManager::~CScintillaManager()
 	Uninitialise();
 }
 
+CScintillaManager& CScintillaManager::Instance()
+{
+	static CScintillaManager instance;
+	return instance;
+}
+
 bool CScintillaManager::Initialise()
 {
 	m_editors.clear();

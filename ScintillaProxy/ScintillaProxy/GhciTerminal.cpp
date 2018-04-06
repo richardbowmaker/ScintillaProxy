@@ -6,7 +6,6 @@
 #include <Commctrl.h>
 #include <algorithm>
 
-
 #include "GhciManager.h"
 #include "GhciTerminal.h"
 
@@ -39,7 +38,8 @@ CGhciTerminal::CGhciTerminal() :
 	m_parent(NULL),
 	m_noOfChars(0),
 	m_hwndLookup(NULL),
-	m_popup(NULL)
+	m_popup(NULL),
+	m_ghci(NULL)
 {
 }
 
@@ -48,7 +48,7 @@ CGhciTerminal::~CGhciTerminal()
 	Uninitialise();
 }
 
-bool CGhciTerminal::Initialise(HWND hParent, char* options, char* file)
+bool CGhciTerminal::Initialise(HWND hParent, const char* options, const char* file)
 {
 	if (!m_initialised)
 	{
@@ -73,9 +73,20 @@ bool CGhciTerminal::Initialise(HWND hParent, char* options, char* file)
 
 			// subclass the rich edit text control
 			::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
-			m_ghci.Initialise(options, file);
-			m_ghci.SetEventHandler(GhciEventHandlerFn, reinterpret_cast<void*>(this));
-			m_initialised = true;
+
+			// create the GHCI session
+			m_ghci = CGhciManager::Instance().New(options, file);
+			if (m_ghci != 0)
+			{
+				m_ghci->SetEventHandler(GhciEventHandlerFn, reinterpret_cast<void*>(this));
+				m_initialised = true;
+			}
+			else
+			{
+				::CloseWindow(m_hwnd);
+				::DestroyWindow(m_hwnd);
+				m_hwnd = NULL;
+			}
 		}
 	}
 	return m_initialised;
@@ -85,7 +96,7 @@ void CGhciTerminal::Uninitialise()
 {
 	if (m_initialised)
 	{
-		m_ghci.Uninitialise();
+		m_ghci->Uninitialise();
 		Notify(EventClosed);
 		m_eventsEnabled = false;
 		::SendMessage(m_hwnd, EM_SETEVENTMASK, 0, 0);
@@ -470,7 +481,7 @@ void CGhciTerminal::UpdateCommandLine(CUtils::StringT text)
 // send a command to the process
 void CGhciTerminal::SendCommand(CUtils::StringT text)
 {
-	m_ghci.SendCommand(text);
+	m_ghci->SendCommand(text);
 
 	// update the command history
 	if (text.size() > 0)
@@ -491,7 +502,7 @@ void CGhciTerminal::SendCommand(CUtils::StringT text)
 
 void CGhciTerminal::SendCommand(char* cmd)
 {
-	m_ghci.SendCommand(cmd);
+	m_ghci->SendCommand(cmd);
 	Notify(EventInput, CUtils::ToStringT(cmd) + _T("\n"));
 }
 

@@ -23,7 +23,7 @@ CGhci::~CGhci()
 	Uninitialise();
 }
 
-bool CGhci::Initialise(char* options, char* file)
+bool CGhci::Initialise(IdT id, const char* options, const char* file)
 {
 	if (!m_initialised)
 	{
@@ -33,6 +33,7 @@ bool CGhci::Initialise(char* options, char* file)
 			::InitializeCriticalSection(&m_cs);
 			m_initialised = true;
 			StartCommand(options, file);
+			m_id = id;
 		}
 	}
 	return m_initialised;
@@ -66,6 +67,11 @@ void CGhci::Uninitialise()
 	}
 }
 
+CGhci::IdT CGhci::GetId()
+{
+	return m_id;
+}
+
 // send a command to the process
 void CGhci::SendCommand(CUtils::StringT text)
 {
@@ -79,11 +85,12 @@ void CGhci::SendCommand(const char* cmd)
 	WriteFile(m_hInputWrite, cmd1.c_str(), (DWORD)cmd1.size(), &nBytesWrote, NULL);
 }
 
-bool CGhci::SendCommandSynch(char* cmd, char* eod, DWORD timeout, const char** output)
+bool CGhci::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** output)
 {
 	bool isok = false;
+	m_result.clear();
 	::EnterCriticalSection(&m_cs);
-	m_output = "";
+	m_output.clear();
 	::LeaveCriticalSection(&m_cs);
 	::ResetEvent(m_outputReady);
 	m_synch = true;
@@ -96,12 +103,13 @@ bool CGhci::SendCommandSynch(char* cmd, char* eod, DWORD timeout, const char** o
 		if (res == WAIT_OBJECT_0)
 		{
 			::EnterCriticalSection(&m_cs);
-			std::string s = m_output;
+			m_result += m_output;
+			m_output.clear();
 			::LeaveCriticalSection(&m_cs);
 
-			if (s.find(eod, 0) != std::string::npos)
+			if (m_result.find(eod, 0) != std::string::npos)
 			{
-				*output = s.c_str();
+				*output = m_result.c_str();
 				isok = true;
 				break;
 			}
@@ -140,7 +148,7 @@ DWORD WINAPI ReadAndHandleOutputFn(_In_ LPVOID lpParameter)
 	return 0;
 }
 
-void CGhci::StartCommand(char* options, char* file)
+void CGhci::StartCommand(const char* options, const char* file)
 {
 	HANDLE hOutputReadTmp, hOutputWrite;
 	HANDLE hInputWriteTmp, hInputRead;
@@ -208,7 +216,7 @@ void CGhci::StartCommand(char* options, char* file)
 // Sets up STARTUPINFO structure, and launches redirected child.
 /////////////////////////////////////////////////////////////////////// 
 void CGhci::PrepAndLaunchRedirectedChild(
-	char* options, char* file,
+	const char* options, const char* file,
 	HANDLE hChildStdOut,
 	HANDLE hChildStdIn,
 	HANDLE hChildStdErr)

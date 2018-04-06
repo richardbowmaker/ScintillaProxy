@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScintillaProxy", "ScintillaProxy\ScintillaProxy.vcxproj", "{E1469EBC-A5C4-4BD5-810C-9446E591B69A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScintillaProxyTest", "..\ScintillaProxyTest\ScintillaProxyTest\ScintillaProxyTest.vcxproj", "{21FE11AB-045C-4876-8AE9-361CF356BB1E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScintillaProxyTest", "ScintillaProxyTest\ScintillaProxyTest.vcxproj", "{21FE11AB-045C-4876-8AE9-361CF356BB1E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,14 +13,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Debug|x64.ActiveCfg = Debug|x64
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Debug|x64.Build.0 = Debug|x64
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Debug|x86.ActiveCfg = Debug|Win32
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Debug|x86.Build.0 = Debug|Win32
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Release|x64.ActiveCfg = Release|x64
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Release|x64.Build.0 = Release|x64
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Release|x86.ActiveCfg = Release|Win32
-		{E1469EBC-A5C4-4BD5-810C-9446E591B69A}.Release|x86.Build.0 = Release|Win32
 		{21FE11AB-045C-4876-8AE9-361CF356BB1E}.Debug|x64.ActiveCfg = Debug|x64
 		{21FE11AB-045C-4876-8AE9-361CF356BB1E}.Debug|x64.Build.0 = Debug|x64
 		{21FE11AB-045C-4876-8AE9-361CF356BB1E}.Debug|x86.ActiveCfg = Debug|Win32
@@ -36,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {0B214E3F-EA3B-48AB-80E2-C96CEE476A72}
+		SolutionGuid = {A9E3EEF1-B032-40E2-9605-F61574E0E855}
 	EndGlobalSection
 EndGlobal

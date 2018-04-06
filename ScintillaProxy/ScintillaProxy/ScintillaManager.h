@@ -12,7 +12,7 @@ public:
 	typedef std::shared_ptr<CScintillaEditor> ScintillaEditorPtrT;
 	typedef std::vector<ScintillaEditorPtrT> EditorsT;
 
-	CScintillaManager();
+	static CScintillaManager& Instance();
 	~CScintillaManager();
 
 	bool	Initialise();
@@ -32,6 +32,7 @@ public:
 
 private:
 
+	CScintillaManager();
 	EditorsT m_editors;
 	HMODULE m_hdll;
 };

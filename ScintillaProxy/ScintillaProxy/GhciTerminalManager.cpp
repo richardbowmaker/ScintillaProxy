@@ -19,6 +19,12 @@ CGhciTerminalManager::~CGhciTerminalManager()
 	Uninitialise();
 }
 
+CGhciTerminalManager& CGhciTerminalManager::Instance()
+{
+	static CGhciTerminalManager instance;
+	return instance;
+}
+
 bool CGhciTerminalManager::Initialise()
 {
 	m_hdll = ::LoadLibrary(TEXT("Msftedit.dll"));
@@ -63,7 +69,7 @@ void CGhciTerminalManager::GetMsgProc(LPMSG pData)
 	}
 }
 
-HWND CGhciTerminalManager::New(HWND parent, char* options, char* file)
+HWND CGhciTerminalManager::New(HWND parent, const char* options, const char* file)
 {
 	if (parent == NULL || m_hdll == NULL) return NULL;
 

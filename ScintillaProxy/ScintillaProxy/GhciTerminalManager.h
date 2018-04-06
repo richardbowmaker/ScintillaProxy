@@ -9,16 +9,15 @@
 class CGhciTerminalManager
 {
 public:
-
 	typedef std::shared_ptr<CGhciTerminal> CGhciTerminalPtrT;
 	typedef std::vector<CGhciTerminalPtrT> SGhciTerminalsT;
 
-	CGhciTerminalManager();
+	static CGhciTerminalManager& Instance();
 	~CGhciTerminalManager();
 
 	bool Initialise();
 	void Uninitialise();
-	HWND New(HWND parent, char* options, char* file);
+	HWND New(HWND parent, const char* options, const char* file);
 	void SetEventHandler(HWND hwnd, CGhciTerminal::EventHandlerT callback);
 	void EnableEvents(HWND hwnd);
 	void DisableEvents(HWND hwnd);
@@ -38,6 +37,8 @@ public:
 	void GetMsgProc(LPMSG pData);
 
 private:
+
+	CGhciTerminalManager();
 
 	SGhciTerminalsT m_ghciTerminals;
 	HMODULE m_hdll;

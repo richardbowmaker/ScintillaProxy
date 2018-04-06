@@ -21,7 +21,7 @@ public:
 	CGhciTerminal();
 	~CGhciTerminal();
 
-	bool Initialise(HWND hParent, char* options, char* file);
+	bool Initialise(HWND hParent, const char* options, const char* file);
 	void Uninitialise();
 	void SetEventHandler(EventHandlerT callback);
 	void EnableEvents();
@@ -55,7 +55,7 @@ public:
 
 private:
 
-	CGhci m_ghci;
+	CGhci::CGhciPtrT m_ghci;
 	void Notify(int event, CUtils::StringT text = _T(""));
 	void UpdateCommandLine(CUtils::StringT text);
 	CUtils::StringT GetCommandLine();

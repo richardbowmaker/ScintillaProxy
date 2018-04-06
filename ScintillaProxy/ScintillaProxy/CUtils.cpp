@@ -20,7 +20,7 @@ CUtils::StringT CUtils::StringRemoveAt(StringT str, unsigned int start, unsigned
 	return s1 + s2;
 }
 
-CUtils::StringT CUtils::ToStringT(char* p)
+CUtils::StringT CUtils::ToStringT(const char* p)
 {
 #ifdef _UNICODE
 	wchar_t wBuff[1000];
@@ -31,7 +31,7 @@ CUtils::StringT CUtils::ToStringT(char* p)
 #endif
 }
 
-CUtils::StringT CUtils::ToStringT(wchar_t* p)
+CUtils::StringT CUtils::ToStringT(const wchar_t* p)
 {
 #ifdef _UNICODE
 	return StringT(p);
