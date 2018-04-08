@@ -30,10 +30,11 @@ bool CGhci::Initialise(IdT id, const char* options, const char* file)
 		m_outputReady = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 		if (m_outputReady != NULL)
 		{
+			m_id = id;
 			::InitializeCriticalSection(&m_cs);
 			m_initialised = true;
+
 			StartCommand(options, file);
-			m_id = id;
 		}
 	}
 	return m_initialised;
@@ -85,17 +86,26 @@ void CGhci::SendCommand(const char* cmd)
 	WriteFile(m_hInputWrite, cmd1.c_str(), (DWORD)cmd1.size(), &nBytesWrote, NULL);
 }
 
-bool CGhci::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** output)
+bool CGhci::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** response)
 {
 	bool isok = false;
-	m_result.clear();
+	m_response.clear();
 	::EnterCriticalSection(&m_cs);
 	m_output.clear();
 	::LeaveCriticalSection(&m_cs);
 	::ResetEvent(m_outputReady);
 	m_synch = true;
 
-	SendCommand(cmd);
+	SendCommand(cmd);	
+	isok = WaitForResponse(eod, timeout, response);
+	m_synch = false;
+	return isok;
+}
+
+bool CGhci::WaitForResponse(const char* eod, DWORD timeout, const char** response)
+{
+	bool isok = false;
+	m_synch = true;
 
 	while (true)
 	{
@@ -103,13 +113,13 @@ bool CGhci::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, co
 		if (res == WAIT_OBJECT_0)
 		{
 			::EnterCriticalSection(&m_cs);
-			m_result += m_output;
+			m_response += m_output;
 			m_output.clear();
 			::LeaveCriticalSection(&m_cs);
 
-			if (m_result.find(eod, 0) != std::string::npos)
+			if (m_response.find(eod, 0) != std::string::npos)
 			{
-				*output = m_result.c_str();
+				*response = m_response.c_str();
 				isok = true;
 				break;
 			}
@@ -127,7 +137,7 @@ void CGhci::Notify(char* text)
 {
 	if (m_handler)
 	{
-		m_handler(text, m_handlerData);
+		m_handler(m_id, text, m_handlerData);
 	}
 }
 
@@ -269,7 +279,7 @@ void CGhci::ReadAndHandleOutput()
 	while (m_initialised)
 	{
 		ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL);
-		if (m_initialised && nBytesRead > 0)
+		if (nBytesRead > 0)
 		{
 			lpBuffer[nBytesRead] = 0;
 			if (m_synch)
@@ -282,7 +292,7 @@ void CGhci::ReadAndHandleOutput()
 			}
 			else
 			{
-				// fr asynchronous command
+				// for asynchronous command
 				Notify(lpBuffer);
 			}
 		}

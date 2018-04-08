@@ -245,10 +245,16 @@ void GhciSendCommand(int id, const char* cmd)
 	CGhciManager::Instance().SendCommand(id, cmd);
 }
 
-BOOL GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** output)
+BOOL GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** response)
 {
-	return (BOOL)CGhciManager::Instance().SendCommandSynch(id, cmd, eod, timeout, output);
+	return (BOOL)CGhciManager::Instance().SendCommandSynch(id, cmd, eod, timeout, response);
 }
+
+BOOL GhciWaitForResponse(int id, const char* eod, DWORD timeout, const char** response)
+{
+	return (BOOL)CGhciManager::Instance().WaitForResponse(id, eod, timeout, response);
+}
+
 
 
 

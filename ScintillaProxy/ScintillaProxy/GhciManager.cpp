@@ -133,4 +133,20 @@ bool CGhciManager::SendCommandSynch(CGhci::IdT id, const char* cmd, const char* 
 	}
 }
 
+bool CGhciManager::WaitForResponse(CGhci::IdT id, const char* eod, DWORD timeout, const char** response)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->WaitForResponse(eod, timeout, response);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
 

@@ -24,10 +24,10 @@ LRESULT CALLBACK RichTextBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
 	return 0;
 }
 
-void GhciEventHandlerFn(char* text, void* data)
+void GhciEventHandlerFn(int id, char* text, void* data)
 {
 	CGhciTerminal* p = reinterpret_cast<CGhciTerminal*>(data);
-	if (p) p->GhciEventHandler(text, data);
+	if (p) p->GhciEventHandler(id, text, data);
 }
 
 CGhciTerminal::CGhciTerminal() :
@@ -120,7 +120,7 @@ void CGhciTerminal::Uninitialise()
 	}
 }
 
-void CGhciTerminal::GhciEventHandler(char* text, void* data)
+void CGhciTerminal::GhciEventHandler(int id, char* text, void* data)
 {
 	CUtils::StringT str = CUtils::ToStringT(text);
 	AddTextTS(str);

@@ -49,7 +49,9 @@ extern "C"
 	SCINTILLAPROXY_API void __cdecl GhciClose(int id);
 	SCINTILLAPROXY_API void __cdecl GhciSetEventHandler(int id, void* callback, void* data);
 	SCINTILLAPROXY_API void __cdecl GhciSendCommand(int id, const char* cmd);
-	SCINTILLAPROXY_API BOOL __cdecl GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** output);
+	SCINTILLAPROXY_API BOOL __cdecl GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** response);
+	SCINTILLAPROXY_API BOOL __cdecl GhciWaitForResponse(int id, const char* eod, DWORD timeout, const char** response);
+
 }
 
 // internal functions
