@@ -27,6 +27,7 @@ public:
 	void SendCommand(CGhci::IdT id, const char* cmd);
 	// send command 'cmd' and wait till the returned output ends with 'eod'
 	// returns false if no eod after timeout ms
+	void SendCommandAsynch(CGhci::IdT id, const char* cmd, const char* eod);
 	bool SendCommandSynch(CGhci::IdT id, const char* cmd, const char* eod, DWORD timeout, const char** response);
 	bool WaitForResponse(CGhci::IdT id, const char* eod, DWORD timeout, const char** response);
 

@@ -8,7 +8,7 @@ class CGhci
 {
 public:
 
-	typedef void (*EventHandlerT)(int, char*, void*);
+	typedef void (*EventHandlerT)(int, const char*, void*);
 	typedef unsigned __int32 IdT;
 	typedef std::shared_ptr<CGhci> CGhciPtrT;
 
@@ -22,6 +22,7 @@ public:
 
 	void SendCommand(CUtils::StringT text);
 	void SendCommand(const char* cmd);
+	void SendCommandAsynch(const char* cmd, const char* eod);
 	// send command 'cmd' and wait till the returned output ends with 'eod'
 	// returns false if no eod after timeout ms
 	bool SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** response);
@@ -37,7 +38,7 @@ private:
 		HANDLE hChildStdOut,
 		HANDLE hChildStdIn,
 		HANDLE hChildStdErr);
-	void Notify(char* text);
+	void Notify(const char* text);
 
 	volatile bool m_initialised;
 	volatile bool m_threadStopped;
@@ -54,5 +55,6 @@ private:
 	HANDLE m_outputReady;
 	CRITICAL_SECTION m_cs;
 	std::string m_response;
+	std::string m_eod;
 };
 

@@ -116,16 +116,27 @@ void CGhciManager::SendCommand(CGhci::IdT id, const char* cmd)
 	}
 }
 
-// send command 'cmd' and wait till the returned output ends with 'eod'
-// returns false if no eod after timeout ms
-bool CGhciManager::SendCommandSynch(CGhci::IdT id, const char* cmd, const char* eod, DWORD timeout, const char** output)
+void CGhciManager::SendCommandAsynch(CGhci::IdT id, const char* cmd, const char* eod)
 {
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
 		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
 
 	if (itr != m_ghcis.end())
 	{
-		return (*itr)->SendCommandSynch(cmd, eod, timeout, output);
+		(*itr)->SendCommandAsynch(cmd, eod);
+	}
+}
+
+// send command 'cmd' and wait till the returned output ends with 'eod'
+// returns false if no eod after timeout ms
+bool CGhciManager::SendCommandSynch(CGhci::IdT id, const char* cmd, const char* eod, DWORD timeout, const char** response)
+{
+	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
+		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
+
+	if (itr != m_ghcis.end())
+	{
+		return (*itr)->SendCommandSynch(cmd, eod, timeout, response);
 	}
 	else
 	{

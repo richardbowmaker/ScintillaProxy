@@ -86,6 +86,14 @@ void CGhci::SendCommand(const char* cmd)
 	WriteFile(m_hInputWrite, cmd1.c_str(), (DWORD)cmd1.size(), &nBytesWrote, NULL);
 }
 
+void CGhci::SendCommandAsynch(const char* cmd, const char* eod)
+{
+	m_eod = eod;
+	m_response.clear();
+	m_synch = false;
+	SendCommand(cmd);
+}
+
 bool CGhci::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** response)
 {
 	bool isok = false;
@@ -133,7 +141,7 @@ bool CGhci::WaitForResponse(const char* eod, DWORD timeout, const char** respons
 	return isok;
 }
 
-void CGhci::Notify(char* text)
+void CGhci::Notify(const char* text)
 {
 	if (m_handler)
 	{
@@ -292,8 +300,14 @@ void CGhci::ReadAndHandleOutput()
 			}
 			else
 			{
-				// for asynchronous command
-				Notify(lpBuffer);
+				// for asynch command
+				m_response += lpBuffer;
+				if (m_response.find(m_eod, 0) != std::string::npos)
+				{
+					Notify(m_response.c_str());
+					m_response.clear();
+					m_eod.clear();
+				}				
 			}
 		}
 	}

@@ -51,7 +51,7 @@ public:
 	void GetMsgProc(LPMSG pData);
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
-	void GhciEventHandler(int id, char* text, void* data);
+	void GhciEventHandler(int id, const char* text, void* data);
 
 private:
 
