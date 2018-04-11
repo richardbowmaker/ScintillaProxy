@@ -37,11 +37,11 @@ void CGhciManager::Uninitialise()
 	m_ghcis.clear();
 }
 
-CGhci::CGhci::CGhciPtrT CGhciManager::New(const char* options, const char* file)
+CGhci::CGhci::CGhciPtrT CGhciManager::New(const char* options, const char* file, const char* directory)
 {
 	CGhci::CGhciPtrT ptrGhci = CGhci::CGhciPtrT(new CGhci);
 	m_idNext++;
-	if (ptrGhci->Initialise(m_idNext, options, file))
+	if (ptrGhci->Initialise(m_idNext, options, file, directory))
 	{
 		// add to list and return it
 		m_ghcis.push_back(ptrGhci);

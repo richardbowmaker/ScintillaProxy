@@ -27,7 +27,7 @@ extern "C"
 	SCINTILLAPROXY_API void		__cdecl ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* handler, void* enabled);
 
 	// GHCI terminal
-	SCINTILLAPROXY_API HWND __cdecl GhciTerminalNew(HWND parent, const char* options, const char* file);
+	SCINTILLAPROXY_API HWND __cdecl GhciTerminalNew(HWND parent, const char* options, const char* file, const char* directory);
 	SCINTILLAPROXY_API void __cdecl GhciTerminalSetEventHandler(HWND hwnd, void* callback);
 	SCINTILLAPROXY_API void __cdecl GhciTerminalEnableEvents(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciTerminalDisableEvents(HWND hwnd);
@@ -45,7 +45,7 @@ extern "C"
 	SCINTILLAPROXY_API void __cdecl GhciTerminalClear(HWND hwnd);
 
 	// GHCI session
-	SCINTILLAPROXY_API int  __cdecl GhciNew(const char* options, const char* file);
+	SCINTILLAPROXY_API int  __cdecl GhciNew(const char* options, const char* file, const char* directory);
 	SCINTILLAPROXY_API void __cdecl GhciClose(int id);
 	SCINTILLAPROXY_API void __cdecl GhciSetEventHandler(int id, void* callback, void* data);
 	SCINTILLAPROXY_API void __cdecl GhciSendCommand(int id, const char* cmd);

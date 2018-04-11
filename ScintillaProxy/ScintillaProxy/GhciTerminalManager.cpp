@@ -69,7 +69,7 @@ void CGhciTerminalManager::GetMsgProc(LPMSG pData)
 	}
 }
 
-HWND CGhciTerminalManager::New(HWND parent, const char* options, const char* file)
+HWND CGhciTerminalManager::New(HWND parent, const char* options, const char* file, const char* directory)
 {
 	if (parent == NULL || m_hdll == NULL) return NULL;
 
@@ -80,7 +80,7 @@ HWND CGhciTerminalManager::New(HWND parent, const char* options, const char* fil
 
 	// start a new GHCI terminal
 	CGhciTerminalPtrT ptrGhci = CGhciTerminalPtrT(new CGhciTerminal);
-	if (ptrGhci->Initialise(parent, options, file))
+	if (ptrGhci->Initialise(parent, options, file, directory))
 	{
 		// add to list and return it
 		m_ghciTerminals.push_back(ptrGhci);

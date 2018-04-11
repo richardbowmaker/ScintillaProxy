@@ -15,7 +15,7 @@ public:
 	CGhci();
 	~CGhci();
 
-	bool Initialise(IdT id, const char* options, const char* file);
+	bool Initialise(IdT id, const char* options, const char* file, const char* directory);
 	void Uninitialise();
 
 	IdT GetId();
@@ -32,9 +32,11 @@ public:
 
 private:
 
-	void StartCommand(const char* options, const char* file);
+	void StartCommand(const char* options, const char* file, const char* directory);
 	void PrepAndLaunchRedirectedChild(
-		const char* options, const char* file,
+		const char* options, 
+		const char* file,
+		const char* directory,
 		HANDLE hChildStdOut,
 		HANDLE hChildStdIn,
 		HANDLE hChildStdErr);

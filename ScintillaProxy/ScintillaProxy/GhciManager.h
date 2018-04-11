@@ -19,7 +19,7 @@ public:
 
 	bool Initialise();
 	void Uninitialise();
-	CGhci::CGhciPtrT New(const char* options, const char* file);
+	CGhci::CGhciPtrT New(const char* options, const char* file, const char* directory);
 	CGhci::CGhciPtrT GetChci(CGhci::IdT id);
 	void Close(CGhci::IdT id);
 	void SetEventHandler(CGhci::IdT id, CGhci::EventHandlerT callback, void* data);

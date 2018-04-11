@@ -48,7 +48,7 @@ CGhciTerminal::~CGhciTerminal()
 	Uninitialise();
 }
 
-bool CGhciTerminal::Initialise(HWND hParent, const char* options, const char* file)
+bool CGhciTerminal::Initialise(HWND hParent, const char* options, const char* file, const char* directory)
 {
 	if (!m_initialised)
 	{
@@ -75,7 +75,7 @@ bool CGhciTerminal::Initialise(HWND hParent, const char* options, const char* fi
 			::SetWindowSubclass(m_hwnd, RichTextBoxProcFn, 0, reinterpret_cast<DWORD_PTR>(this));
 
 			// create the GHCI session
-			m_ghci = CGhciManager::Instance().New(options, file);
+			m_ghci = CGhciManager::Instance().New(options, file, directory);
 			if (m_ghci != 0)
 			{
 				m_ghci->SetEventHandler(GhciEventHandlerFn, reinterpret_cast<void*>(this));

@@ -137,9 +137,9 @@ void ScnAddPopupMenuItem(HWND scintilla, int id, char* title, void* handler, voi
 		(CScintillaEditor::MenuEnabledT)enabled);
 }
 
-HWND GhciTerminalNew(HWND parent, const char* options, const char* file)
+HWND GhciTerminalNew(HWND parent, const char* options, const char* file, const char* directory)
 {
-	return CGhciTerminalManager::Instance().New(parent, options, file);
+	return CGhciTerminalManager::Instance().New(parent, options, file, directory);
 }
 
 void GhciTerminalClose(HWND hwnd)
@@ -217,9 +217,9 @@ void GhciTerminalClear(HWND hwnd)
 	return CGhciTerminalManager::Instance().Clear(hwnd);
 }
 
-int GhciNew(const char* options, const char* file)
+int GhciNew(const char* options, const char* file, const char* directory)
 {
-	CGhci::CGhciPtrT ptr = CGhciManager::Instance().New(options, file);
+	CGhci::CGhciPtrT ptr = CGhciManager::Instance().New(options, file, directory);
 	if (ptr != NULL)
 	{
 		return ptr->GetId();

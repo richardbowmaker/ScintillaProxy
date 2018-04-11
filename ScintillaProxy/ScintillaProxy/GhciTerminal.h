@@ -21,7 +21,7 @@ public:
 	CGhciTerminal();
 	~CGhciTerminal();
 
-	bool Initialise(HWND hParent, const char* options, const char* file);
+	bool Initialise(HWND hParent, const char* options, const char* file, const char* directory);
 	void Uninitialise();
 	void SetEventHandler(EventHandlerT callback);
 	void EnableEvents();

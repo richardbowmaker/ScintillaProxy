@@ -23,7 +23,7 @@ CGhci::~CGhci()
 	Uninitialise();
 }
 
-bool CGhci::Initialise(IdT id, const char* options, const char* file)
+bool CGhci::Initialise(IdT id, const char* options, const char* file, const char* directory)
 {
 	if (!m_initialised)
 	{
@@ -34,7 +34,7 @@ bool CGhci::Initialise(IdT id, const char* options, const char* file)
 			::InitializeCriticalSection(&m_cs);
 			m_initialised = true;
 
-			StartCommand(options, file);
+			StartCommand(options, file, directory);
 		}
 	}
 	return m_initialised;
@@ -166,7 +166,7 @@ DWORD WINAPI ReadAndHandleOutputFn(_In_ LPVOID lpParameter)
 	return 0;
 }
 
-void CGhci::StartCommand(const char* options, const char* file)
+void CGhci::StartCommand(const char* options, const char* file, const char* directory)
 {
 	HANDLE hOutputReadTmp, hOutputWrite;
 	HANDLE hInputWriteTmp, hInputRead;
@@ -214,7 +214,7 @@ void CGhci::StartCommand(const char* options, const char* file)
 	CloseHandle(hOutputReadTmp);
 	CloseHandle(hInputWriteTmp);
 
-	PrepAndLaunchRedirectedChild(options, file, hOutputWrite, hInputRead, hErrorWrite);
+	PrepAndLaunchRedirectedChild(options, file, directory, hOutputWrite, hInputRead, hErrorWrite);
 
 	// Close pipe handles (do not continue to modify the parent).
 	// You need to make sure that no handles to the write end of the
@@ -234,7 +234,9 @@ void CGhci::StartCommand(const char* options, const char* file)
 // Sets up STARTUPINFO structure, and launches redirected child.
 /////////////////////////////////////////////////////////////////////// 
 void CGhci::PrepAndLaunchRedirectedChild(
-	const char* options, const char* file,
+	const char* options, 
+	const char* file,
+	const char* directory,
 	HANDLE hChildStdOut,
 	HANDLE hChildStdIn,
 	HANDLE hChildStdErr)
@@ -266,7 +268,9 @@ void CGhci::PrepAndLaunchRedirectedChild(
 	cmdl += CUtils::ToStringT(file);
 	wchar_t wBuff[1000];
 	wcscpy_s(wBuff, _countof(wBuff), cmdl.c_str());
-	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+	CUtils::StringT dir = CUtils::ToStringT(directory);
+
+	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, dir.c_str(), &si, &pi);
 
 	// Set global child process handle to cause threads to exit.
 	m_hChildProcess = pi.hProcess;

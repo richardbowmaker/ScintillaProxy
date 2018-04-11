@@ -17,7 +17,7 @@ public:
 
 	bool Initialise();
 	void Uninitialise();
-	HWND New(HWND parent, const char* options, const char* file);
+	HWND New(HWND parent, const char* options, const char* file, const char* directory);
 	void SetEventHandler(HWND hwnd, CGhciTerminal::EventHandlerT callback);
 	void EnableEvents(HWND hwnd);
 	void DisableEvents(HWND hwnd);
