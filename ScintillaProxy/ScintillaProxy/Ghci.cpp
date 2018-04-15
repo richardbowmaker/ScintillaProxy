@@ -2,13 +2,13 @@
 
 #include <windows.h>
 #include <Windowsx.h>
+#include <tlhelp32.h>
 
 #include "Ghci.h"
 
 CGhci::CGhci() :
 	m_initialised(false),
 	m_threadStopped(false),
-	m_hChildProcess(NULL),
 	m_hInputWrite(NULL),
 	m_hOutputRead(NULL),
 	m_handler(NULL),
@@ -16,6 +16,8 @@ CGhci::CGhci() :
 	m_outputReady(NULL),
 	m_synch(false)
 {
+	::ZeroMemory(&m_pi, sizeof(PROCESS_INFORMATION));
+	::ZeroMemory(&m_si, sizeof(STARTUPINFO));
 }
 
 CGhci::~CGhci()
@@ -52,10 +54,32 @@ void CGhci::Uninitialise()
 			::CloseHandle(m_outputReady);
 		}
 
-		if (m_hChildProcess)
+		if (m_pi.hProcess)
 		{
 			SendCommand(_T(":quit\n"));
-			m_hChildProcess = NULL;
+
+			// delete all child processes of GHCI, i.e. the program being debugged in GHCI
+			HANDLE h = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+			PROCESSENTRY32 pe;
+			::ZeroMemory(&pe, sizeof(PROCESSENTRY32));
+			pe.dwSize = sizeof(PROCESSENTRY32);
+			bool more = Process32First(h, &pe);
+			while (more) 			
+			{
+				if (pe.th32ParentProcessID == m_pi.dwProcessId)
+				{
+					HANDLE h = ::OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+					if (h != NULL)
+					{
+						::TerminateProcess(h, 1);
+					}
+				}
+				more = Process32Next(h, &pe);
+			}
+
+			// terminate GHCI
+			::TerminateProcess(m_pi.hProcess, 1);
+			m_pi.hProcess = NULL;
 		}
 
 		// terminate thread
@@ -241,16 +265,13 @@ void CGhci::PrepAndLaunchRedirectedChild(
 	HANDLE hChildStdIn,
 	HANDLE hChildStdErr)
 {
-	PROCESS_INFORMATION pi;
-	STARTUPINFO si;
-
 	// Set up the start up info struct.
-	ZeroMemory(&si, sizeof(STARTUPINFO));
-	si.cb = sizeof(STARTUPINFO);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdOutput = hChildStdOut;
-	si.hStdInput = hChildStdIn;
-	si.hStdError = hChildStdErr;
+	ZeroMemory(&m_si, sizeof(STARTUPINFO));
+	m_si.cb = sizeof(STARTUPINFO);
+	m_si.dwFlags = STARTF_USESTDHANDLES;
+	m_si.hStdOutput = hChildStdOut;
+	m_si.hStdInput = hChildStdIn;
+	m_si.hStdError = hChildStdErr;
 	// Use this if you want to hide the child:
 	//     si.wShowWindow = SW_HIDE;
 	// Note that dwFlags must include STARTF_USESHOWWINDOW if you want to
@@ -270,13 +291,10 @@ void CGhci::PrepAndLaunchRedirectedChild(
 	wcscpy_s(wBuff, _countof(wBuff), cmdl.c_str());
 	CUtils::StringT dir = CUtils::ToStringT(directory);
 
-	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, dir.c_str(), &si, &pi);
-
-	// Set global child process handle to cause threads to exit.
-	m_hChildProcess = pi.hProcess;
+	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, dir.c_str(), &m_si, &m_pi);
 
 	// Close any unnecessary handles.
-	CloseHandle(pi.hThread);
+	CloseHandle(m_pi.hThread);
 }
 
 /////////////////////////////////////////////////////////////////////// 
@@ -290,28 +308,33 @@ void CGhci::ReadAndHandleOutput()
 
 	while (m_initialised)
 	{
-		ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL);
+		Sleep(50);
+		PeekNamedPipe(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL, NULL);
 		if (nBytesRead > 0)
 		{
-			lpBuffer[nBytesRead] = 0;
-			if (m_synch)
+			ReadFile(m_hOutputRead, lpBuffer, (sizeof(lpBuffer) - 1), &nBytesRead, NULL);
+			if (nBytesRead > 0)
 			{
-				// for synchronised command
-				::EnterCriticalSection(&m_cs);
-				m_output += lpBuffer;
-				::LeaveCriticalSection(&m_cs);
-				::SetEvent(m_outputReady);
-			}
-			else
-			{
-				// for asynch command
-				m_response += lpBuffer;
-				if (m_response.find(m_eod, 0) != std::string::npos)
+				lpBuffer[nBytesRead] = 0;
+				if (m_synch)
 				{
-					Notify(m_response.c_str());
-					m_response.clear();
-					m_eod.clear();
-				}				
+					// for synchronised command
+					::EnterCriticalSection(&m_cs);
+					m_output += lpBuffer;
+					::LeaveCriticalSection(&m_cs);
+					::SetEvent(m_outputReady);
+				}
+				else
+				{
+					// for asynch command
+					m_response += lpBuffer;
+					if (m_response.find(m_eod, 0) != std::string::npos)
+					{
+						Notify(m_response.c_str());
+						m_response.clear();
+						m_eod.clear();
+					}
+				}
 			}
 		}
 	}

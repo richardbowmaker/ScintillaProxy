@@ -45,9 +45,10 @@ private:
 	volatile bool m_initialised;
 	volatile bool m_threadStopped;
 	IdT m_id;
-	HANDLE m_hChildProcess;
 	HANDLE m_hInputWrite;
 	HANDLE m_hOutputRead;
+	PROCESS_INFORMATION m_pi;
+	STARTUPINFO m_si;
 	EventHandlerT m_handler;
 	void* m_handlerData;
 
