@@ -194,7 +194,7 @@ void CGhci::StartCommand(const char* options, const char* file, const char* dire
 {
 	HANDLE hOutputReadTmp, hOutputWrite;
 	HANDLE hInputWriteTmp, hInputRead;
-	HANDLE hErrorWrite;
+	HANDLE hErrorReadTmp, hErrorWrite;
 	HANDLE hThread;
 	DWORD ThreadId;
 	SECURITY_ATTRIBUTES sa;
@@ -210,9 +210,14 @@ void CGhci::StartCommand(const char* options, const char* file, const char* dire
 	// Create a duplicate of the output write handle for the std error
 	// write handle. This is necessary in case the child application
 	// closes one of its std output handles.
-	DuplicateHandle(GetCurrentProcess(), hOutputWrite,
-		GetCurrentProcess(), &hErrorWrite, 0,
-		TRUE, DUPLICATE_SAME_ACCESS);
+	DuplicateHandle(
+		GetCurrentProcess(), 
+		hOutputWrite,
+		GetCurrentProcess(), 
+		&hErrorWrite, 
+		0, 
+		TRUE, 
+		DUPLICATE_SAME_ACCESS);
 
 	// Create the child input pipe.
 	CreatePipe(&hInputRead, &hInputWriteTmp, &sa, 0);
@@ -221,16 +226,22 @@ void CGhci::StartCommand(const char* options, const char* file, const char* dire
 	// the Properties to FALSE. Otherwise, the child inherits the
 	// properties and, as a result, non-closeable handles to the pipes
 	// are created.
-	DuplicateHandle(GetCurrentProcess(), hOutputReadTmp,
+	DuplicateHandle(
+		GetCurrentProcess(), 
+		hOutputReadTmp,
 		GetCurrentProcess(),
 		&m_hOutputRead, // Address of new handle.
-		0, FALSE, // Make it uninheritable.
+		0, 
+		FALSE, // Make it uninheritable.
 		DUPLICATE_SAME_ACCESS);
 
-	DuplicateHandle(GetCurrentProcess(), hInputWriteTmp,
+	DuplicateHandle(
+		GetCurrentProcess(), 
+		hInputWriteTmp,
 		GetCurrentProcess(),
 		&m_hInputWrite, // Address of new handle.
-		0, FALSE, // Make it uninheritable.
+		0, 
+		FALSE, // Make it uninheritable.
 		DUPLICATE_SAME_ACCESS);
 
 	// Close inheritable copies of the handles you do not want to be
@@ -335,6 +346,18 @@ void CGhci::ReadAndHandleOutput()
 						m_eod.clear();
 					}
 				}
+			}
+		}
+		// check to see if the child process is still alive
+		DWORD code;
+		if (::GetExitCodeProcess(m_pi.hProcess, &code))
+		{
+			if (code != STILL_ACTIVE)
+			{
+				// GHCI has stopped unexpectedly
+				DWORD err = ::GetLastError();
+				Notify("GHCI terminated unexpectedly\n");
+				break;
 			}
 		}
 	}
