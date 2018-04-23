@@ -330,7 +330,7 @@ void CGhci::PrepAndLaunchRedirectedChild(
 	// confusion.
 	// "C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	CUtils::StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghcixxx.exe");
+	CUtils::StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
 	//CUtils::StringT cmd = _T("C:\\Windows\\System32\\CMD.EXE");
 	CUtils::StringT cmdl = CUtils::ToStringT(options) + _T(' ');
 	cmdl += CUtils::ToStringT(file);
