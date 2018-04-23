@@ -10,6 +10,7 @@
 #include <tchar.h>
 #include <Windows.h>
 
+#include "CUtils.h"
 #include "ScintillaProxy.h"
 #include "GhciManager.h"
 #include "GhciTerminalManager.h"

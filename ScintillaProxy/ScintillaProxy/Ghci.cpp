@@ -5,6 +5,7 @@
 #include <tlhelp32.h>
 
 #include "Ghci.h"
+#include "CUtils.h"
 
 CGhci::CGhci() :
 	m_initialised(false),
@@ -16,8 +17,8 @@ CGhci::CGhci() :
 	m_outputReady(NULL),
 	m_synch(false)
 {
-	::ZeroMemory(&m_pi, sizeof(PROCESS_INFORMATION));
-	::ZeroMemory(&m_si, sizeof(STARTUPINFO));
+	::ZeroMemory(&m_pi, sizeof(m_pi));
+	::ZeroMemory(&m_si, sizeof(m_si));
 }
 
 CGhci::~CGhci()
@@ -35,8 +36,10 @@ bool CGhci::Initialise(IdT id, const char* options, const char* file, const char
 			m_id = id;
 			::InitializeCriticalSection(&m_cs);
 			m_initialised = true;
-
-			StartCommand(options, file, directory);
+			if (!StartCommand(options, file, directory))
+			{
+				Uninitialise();
+			}
 		}
 	}
 	return m_initialised;
@@ -80,15 +83,16 @@ void CGhci::Uninitialise()
 			// terminate GHCI
 			::TerminateProcess(m_pi.hProcess, 1);
 			m_pi.hProcess = NULL;
-		}
 
-		// terminate thread
-		m_initialised = false;
-		while (!m_threadStopped);
+			// terminate thread
+			m_initialised = false;
+			while (!m_threadStopped);
+		}
 
 		::DeleteCriticalSection(&m_cs);
 		::CloseHandle(m_hInputWrite);
 		::CloseHandle(m_hOutputRead);
+		m_initialised = false;
 	}
 }
 
@@ -190,13 +194,16 @@ DWORD WINAPI ReadAndHandleOutputFn(_In_ LPVOID lpParameter)
 	return 0;
 }
 
-void CGhci::StartCommand(const char* options, const char* file, const char* directory)
+bool CGhci::StartCommand(const char* options, const char* file, const char* directory)
 {
-	HANDLE hOutputReadTmp, hOutputWrite;
-	HANDLE hInputWriteTmp, hInputRead;
-	HANDLE hErrorReadTmp, hErrorWrite;
-	HANDLE hThread;
-	DWORD ThreadId;
+	HANDLE hOutputReadTmp	= NULL; 
+	HANDLE hOutputWrite		= NULL;
+	HANDLE hInputWriteTmp	= NULL;
+	HANDLE hInputRead		= NULL;
+	HANDLE hErrorReadTmp	= NULL;
+	HANDLE hErrorWrite		= NULL;
+	HANDLE hThread			= NULL;
+	DWORD ThreadId			= 0;
 	SECURITY_ATTRIBUTES sa;
 
 	// Set up the security attributes struct.
@@ -204,64 +211,92 @@ void CGhci::StartCommand(const char* options, const char* file, const char* dire
 	sa.lpSecurityDescriptor = NULL;
 	sa.bInheritHandle = TRUE;
 
-	// Create the child output pipe.
-	CreatePipe(&hOutputReadTmp, &hOutputWrite, &sa, 0);
+	try
+	{
+		// Create the child output pipe.
+		if (!::CreatePipe(&hOutputReadTmp, &hOutputWrite, &sa, 0))
+			throw CException::CreateException("Can't create output pipe");
 
-	// Create a duplicate of the output write handle for the std error
-	// write handle. This is necessary in case the child application
-	// closes one of its std output handles.
-	DuplicateHandle(
-		GetCurrentProcess(), 
-		hOutputWrite,
-		GetCurrentProcess(), 
-		&hErrorWrite, 
-		0, 
-		TRUE, 
-		DUPLICATE_SAME_ACCESS);
+		// Create a duplicate of the output write handle for the std error
+		// write handle. This is necessary in case the child application
+		// closes one of its std output handles.
+		if (!::DuplicateHandle(
+			GetCurrentProcess(),
+			hOutputWrite,
+			GetCurrentProcess(),
+			&hErrorWrite,
+			0,
+			TRUE,
+			DUPLICATE_SAME_ACCESS))
+			throw CException::CreateException("Can't duplicate error output pipe");
 
-	// Create the child input pipe.
-	CreatePipe(&hInputRead, &hInputWriteTmp, &sa, 0);
+		// Create the child input pipe.
+		if (!::CreatePipe(&hInputRead, &hInputWriteTmp, &sa, 0))
+			throw CException::CreateException("Can't create input pipe");
 
-	// Create new output read handle and the input write handles. Set
-	// the Properties to FALSE. Otherwise, the child inherits the
-	// properties and, as a result, non-closeable handles to the pipes
-	// are created.
-	DuplicateHandle(
-		GetCurrentProcess(), 
-		hOutputReadTmp,
-		GetCurrentProcess(),
-		&m_hOutputRead, // Address of new handle.
-		0, 
-		FALSE, // Make it uninheritable.
-		DUPLICATE_SAME_ACCESS);
+		// Create new output read handle and the input write handles. Set
+		// the Properties to FALSE. Otherwise, the child inherits the
+		// properties and, as a result, non-closeable handles to the pipes
+		// are created.
+		if (!::DuplicateHandle(
+			GetCurrentProcess(),
+			hOutputReadTmp,
+			GetCurrentProcess(),
+			&m_hOutputRead, // Address of new handle.
+			0,
+			FALSE, // Make it uninheritable.
+			DUPLICATE_SAME_ACCESS))
+			throw CException::CreateException("Can't duplicate output pipe");
 
-	DuplicateHandle(
-		GetCurrentProcess(), 
-		hInputWriteTmp,
-		GetCurrentProcess(),
-		&m_hInputWrite, // Address of new handle.
-		0, 
-		FALSE, // Make it uninheritable.
-		DUPLICATE_SAME_ACCESS);
+		if (!::DuplicateHandle(
+			GetCurrentProcess(),
+			hInputWriteTmp,
+			GetCurrentProcess(),
+			&m_hInputWrite, // Address of new handle.
+			0,
+			FALSE, // Make it uninheritable.
+			DUPLICATE_SAME_ACCESS))
+			throw CException::CreateException("Can't duplicate imput pipe");
 
-	// Close inheritable copies of the handles you do not want to be
-	// inherited.
-	CloseHandle(hOutputReadTmp);
-	CloseHandle(hInputWriteTmp);
+		// Close inheritable copies of the handles you do not want to be
+		// inherited.
+		if (!::CloseHandle(hOutputReadTmp)) throw CException::CreateException("Can't close output read tmp handle");
+		hOutputReadTmp = NULL;
+		if (!::CloseHandle(hInputWriteTmp)) throw CException::CreateException("Can't close input write tmp handle");
+		hInputWriteTmp = NULL;
 
-	PrepAndLaunchRedirectedChild(options, file, directory, hOutputWrite, hInputRead, hErrorWrite);
+		PrepAndLaunchRedirectedChild(options, file, directory, hOutputWrite, hInputRead, hErrorWrite);
 
-	// Close pipe handles (do not continue to modify the parent).
-	// You need to make sure that no handles to the write end of the
-	// output pipe are maintained in this process or else the pipe will
-	// not close when the child process exits and the ReadFile will hang.
-	CloseHandle(hOutputWrite);
-	CloseHandle(hInputRead);
-	CloseHandle(hErrorWrite);
+		// Close pipe handles (do not continue to modify the parent).
+		// You need to make sure that no handles to the write end of the
+		// output pipe are maintained in this process or else the pipe will
+		// not close when the child process exits and the ReadFile will hang.
+		if (!::CloseHandle(hOutputWrite)) throw CException::CreateException("Can't close output write handle");
+		hOutputWrite = NULL;
+		if (!::CloseHandle(hInputRead)) throw CException::CreateException("Can't close input read handle");
+		hInputRead = NULL;
+		if (!::CloseHandle(hErrorWrite)) throw CException::CreateException("Can't close error write handle");
+		hErrorWrite = NULL;
 
-	// Launch the thread that gets the output and sends it to rich text box
-	hThread = CreateThread(NULL, 0, ReadAndHandleOutputFn,
-		(LPVOID)this, 0, &ThreadId);
+		// Launch the thread that gets the output and sends it to rich text box
+		hThread = ::CreateThread(NULL, 0, ReadAndHandleOutputFn, (LPVOID)this, 0, &ThreadId);
+
+		if (hThread == NULL)
+			throw CException::CreateException("Can't create read output worker thread");
+
+		return true;
+	}
+	catch (CException &)
+	{
+		if (hOutputReadTmp	!= NULL) ::CloseHandle(hOutputReadTmp);
+		if (hOutputWrite	!= NULL) ::CloseHandle(hOutputWrite);
+		if (hInputWriteTmp	!= NULL) ::CloseHandle(hInputWriteTmp);
+		if (hInputRead		!= NULL) ::CloseHandle(hInputRead);
+		if (hErrorReadTmp	!= NULL) ::CloseHandle(hErrorReadTmp);
+		if (hErrorWrite		!= NULL) ::CloseHandle(hErrorWrite);
+		if (hThread			!= NULL) ::CloseHandle(hThread);
+		return false;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////// 
@@ -295,14 +330,18 @@ void CGhci::PrepAndLaunchRedirectedChild(
 	// confusion.
 	// "C:\\Program Files\\Haskell Platform\\8.2.2\\bin\\ghci.exe"
 	// "C:\\Windows\\System32\\CMD.EXE"
-	CUtils::StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghci.exe");
+	CUtils::StringT cmd = _T("C:\\Program Files\\Haskell Platform\\8.0.1\\bin\\ghcixxx.exe");
+	//CUtils::StringT cmd = _T("C:\\Windows\\System32\\CMD.EXE");
 	CUtils::StringT cmdl = CUtils::ToStringT(options) + _T(' ');
 	cmdl += CUtils::ToStringT(file);
 	wchar_t wBuff[1000];
 	wcscpy_s(wBuff, _countof(wBuff), cmdl.c_str());
 	CUtils::StringT dir = CUtils::ToStringT(directory);
 
-	BOOL b = CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, dir.c_str(), &m_si, &m_pi);
+	if (!::CreateProcess(cmd.c_str(), wBuff, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, dir.c_str(), &m_si, &m_pi))
+	{
+		throw CException::CreateLastErrorException();
+	}
 
 	// Close any unnecessary handles.
 	CloseHandle(m_pi.hThread);

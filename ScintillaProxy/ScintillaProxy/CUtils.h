@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <tchar.h>
+#include <exception>
 
 class CUtils
 {
@@ -24,3 +25,22 @@ public:
 
 };
 
+class CException : public std::exception
+{
+public:
+
+	static CException CreateLastErrorException();
+	static CException CreateException(const char* what);
+	virtual ~CException();
+	CException(const CException& other);
+	CException& operator=(const CException& other);
+
+	virtual const char* what() const;
+
+private:
+
+	CException();
+	CException(const char* what);
+
+	std::string m_what;
+};

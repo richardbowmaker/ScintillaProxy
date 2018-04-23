@@ -53,3 +53,61 @@ std::string CUtils::ToChar(StringT& s)
 #endif
 }
 
+//-----------------------------------------------------
+// CException
+//-----------------------------------------------------
+
+CException CException::CreateLastErrorException()
+{
+	DWORD err = ::GetLastError();
+	if (err != 0)
+	{
+		LPSTR message = nullptr;
+		size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&message, 0, NULL);
+		std::string s(message, size);
+		LocalFree(message);
+		CException ex(s.c_str());
+		return ex;
+	}
+	else
+	{
+		CException ex;
+		return ex;
+	}
+}
+
+CException CException::CreateException(const char* what)
+{
+	return CException(what);
+}
+
+CException::CException()
+{
+}
+
+CException::CException(const char* what)
+{
+	m_what = what;
+}
+
+CException::~CException()
+{
+}
+
+CException::CException(const CException& other)
+{
+	*this = other;
+}
+
+CException& CException::operator=(const CException& other)
+{
+	m_what = other.what();
+	return *this;
+}
+
+const char* CException::what() const
+{
+	return m_what.c_str();
+}
+

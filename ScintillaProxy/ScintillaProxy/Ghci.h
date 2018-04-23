@@ -32,7 +32,7 @@ public:
 
 private:
 
-	void StartCommand(const char* options, const char* file, const char* directory);
+	bool StartCommand(const char* options, const char* file, const char* directory);
 	void PrepAndLaunchRedirectedChild(
 		const char* options, 
 		const char* file,
