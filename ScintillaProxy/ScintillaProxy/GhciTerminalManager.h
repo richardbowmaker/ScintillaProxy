@@ -28,6 +28,9 @@ public:
 	void SelectAll(HWND hwnd);
 	bool HasFocus(HWND hwnd);
 	void SendCommand(HWND hwnd, char* cmd);
+	void SendCommandAsynch(HWND hwnd, const char* cmd, const char* sod, const char* eod);
+	bool SendCommandSynch(HWND hwnd, const char* cmd, const char* eod, DWORD timeout, const char** response);
+	bool WaitForResponse(HWND hwnd, const char* eod, DWORD timeout, const char** response);
 	bool IsTextSelected(HWND hwnd);
 	void SetFocus(HWND hwnd);
 	int  GetTextLength(HWND hwnd);

@@ -24,10 +24,10 @@ LRESULT CALLBACK RichTextBoxProcFn(HWND hWnd, UINT uMsg, WPARAM wParam,
 	return 0;
 }
 
-void GhciEventHandlerFn(int id, const char* text, void* data)
+void GhciEventHandlerFn(int id, int event, const char* text, void* data)
 {
 	CGhciTerminal* p = reinterpret_cast<CGhciTerminal*>(data);
-	if (p) p->GhciEventHandler(id, text, data);
+	if (p) p->GhciEventHandler(id, event, text, data);
 }
 
 CGhciTerminal::CGhciTerminal() :
@@ -120,12 +120,25 @@ void CGhciTerminal::Uninitialise()
 	}
 }
 
-void CGhciTerminal::GhciEventHandler(int id, const char* text, void* data)
+void CGhciTerminal::GhciEventHandler(int id, int event, const char* text, void* data)
 {
 	CUtils::StringT str = CUtils::ToStringT(text);
-	AddTextTS(str);
-	m_noOfChars = GetNoOfChars();
-	Notify(EventOutput, str);
+
+	switch (event)
+	{
+	case CGhci::EventOutput:
+		AddTextTS(str);
+		m_noOfChars = GetNoOfChars();
+		Notify(EventOutput, str);
+		break;
+	case CGhci::EventAsynchOutput:
+		Notify(EventOutput, str);
+		break;
+	case CGhci::EventError:
+		Notify(EventOutput, str);
+		break;
+	}
+
 }
 
 void CGhciTerminal::ClearText()
@@ -274,7 +287,8 @@ void CGhciTerminal::Notify(int event, CUtils::StringT text)
 		}
 			break;
 		default:
-			m_notify(m_hwnd, event, NULL);
+			//m_notify(m_hwnd, event, NULL);
+			break;
 		}
 	}
 }
@@ -504,6 +518,23 @@ void CGhciTerminal::SendCommand(char* cmd)
 {
 	m_ghci->SendCommand(cmd);
 	Notify(EventInput, CUtils::ToStringT(cmd) + _T("\n"));
+}
+
+void CGhciTerminal::SendCommandAsynch(const char* cmd, const char* sod, const char* eod)
+{
+	m_ghci->SendCommandAsynch(cmd, sod, eod);
+	Notify(EventInput, CUtils::ToStringT(cmd) + _T("\n"));
+}
+
+bool CGhciTerminal::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** response)
+{
+	Notify(EventInput, CUtils::ToStringT(cmd) + _T("\n"));
+	return m_ghci->SendCommandSynch(cmd, eod, timeout, response);
+}
+
+bool CGhciTerminal::WaitForResponse(const char* eod, DWORD timeout, const char** response)
+{
+	return m_ghci->WaitForResponse(eod, timeout, response);
 }
 
 bool CGhciTerminal::IsTextSelected()

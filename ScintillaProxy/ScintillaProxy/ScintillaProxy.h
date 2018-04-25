@@ -39,6 +39,9 @@ extern "C"
 	SCINTILLAPROXY_API BOOL __cdecl GhciTerminalHasFocus(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciTerminalSetFocus(HWND hwnd);
 	SCINTILLAPROXY_API void __cdecl GhciTerminalSendCommand(HWND hwnd, char* cmd);
+	SCINTILLAPROXY_API void __cdecl GhciTerminalSendCommandAsynch(HWND hwnd, const char* cmd, const char* sod, const char* eod);
+	SCINTILLAPROXY_API BOOL __cdecl GhciTerminalSendCommandSynch(HWND hwnd, const char* cmd, const char* eod, DWORD timeout, const char** response);
+	SCINTILLAPROXY_API BOOL __cdecl GhciTerminalWaitForResponse(HWND hwnd, const char* eod, DWORD timeout, const char** response);
 	SCINTILLAPROXY_API BOOL __cdecl GhciTerminalIsTextSelected(HWND hwnd);
 	SCINTILLAPROXY_API int  __cdecl GhciTerminalGetTextLength(HWND hwnd);
 	SCINTILLAPROXY_API int  __cdecl GhciTerminalGetText(HWND hwnd, char* buff, int size);
@@ -49,7 +52,7 @@ extern "C"
 	SCINTILLAPROXY_API void __cdecl GhciClose(int id);
 	SCINTILLAPROXY_API void __cdecl GhciSetEventHandler(int id, void* callback, void* data);
 	SCINTILLAPROXY_API void __cdecl GhciSendCommand(int id, const char* cmd);
-	SCINTILLAPROXY_API void __cdecl GhciSendCommandAsynch(int id, const char* cmd, const char* eod);
+	SCINTILLAPROXY_API void __cdecl GhciSendCommandAsynch(int id, const char* cmd, const char* sod, const char* eod);
 	SCINTILLAPROXY_API BOOL __cdecl GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** response);
 	SCINTILLAPROXY_API BOOL __cdecl GhciWaitForResponse(int id, const char* eod, DWORD timeout, const char** response);
 }

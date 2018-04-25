@@ -47,11 +47,16 @@ public:
 	void Clear();
 	void SendCommand(CUtils::StringT text);
 	void SendCommand(char* cmd);
+	void SendCommandAsynch(const char* cmd, const char* sod, const char* eod);
+	// send command 'cmd' and wait till the returned output ends with 'eod'
+	// returns false if no eod after timeout ms
+	bool SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, const char** response);
+	bool WaitForResponse(const char* eod, DWORD timeout, const char** response);
 	void WndProcRetHook(LPCWPRETSTRUCT pData);
 	void GetMsgProc(LPMSG pData);
 	bool RichTextBoxProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	bool ListBoxProc(UINT Msg, WPARAM wParam, LPARAM lParam);
-	void GhciEventHandler(int id, const char* text, void* data);
+	void GhciEventHandler(int id, int event, const char* text, void* data);
 
 private:
 

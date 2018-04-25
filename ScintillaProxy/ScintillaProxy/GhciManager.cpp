@@ -116,14 +116,14 @@ void CGhciManager::SendCommand(CGhci::IdT id, const char* cmd)
 	}
 }
 
-void CGhciManager::SendCommandAsynch(CGhci::IdT id, const char* cmd, const char* eod)
+void CGhciManager::SendCommandAsynch(CGhci::IdT id, const char* cmd, const char* sod, const char* eod)
 {
 	SGhcisT::const_iterator itr = std::find_if(m_ghcis.begin(), m_ghcis.end(),
 		[=](CGhci::CGhciPtrT& ptrGhci) -> bool { return ptrGhci->GetId() == id; });
 
 	if (itr != m_ghcis.end())
 	{
-		(*itr)->SendCommandAsynch(cmd, eod);
+		(*itr)->SendCommandAsynch(cmd, sod, eod);
 	}
 }
 

@@ -209,6 +209,47 @@ void CGhciTerminalManager::SendCommand(HWND hwnd, char* cmd)
 	}
 }
 
+void CGhciTerminalManager::SendCommandAsynch(HWND hwnd, const char* cmd, const char* sod, const char* eod)
+{
+	SGhciTerminalsT::const_iterator itr = std::find_if(m_ghciTerminals.begin(), m_ghciTerminals.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghciTerminals.end())
+	{
+		(*itr)->SendCommandAsynch(cmd, sod, eod);
+	}
+}
+
+bool CGhciTerminalManager::SendCommandSynch(HWND hwnd, const char* cmd, const char* eod, DWORD timeout, const char** response)
+{
+	SGhciTerminalsT::const_iterator itr = std::find_if(m_ghciTerminals.begin(), m_ghciTerminals.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghciTerminals.end())
+	{
+		return (*itr)->SendCommandSynch(cmd, eod, timeout, response);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool CGhciTerminalManager::WaitForResponse(HWND hwnd, const char* eod, DWORD timeout, const char** response)
+{
+	SGhciTerminalsT::const_iterator itr = std::find_if(m_ghciTerminals.begin(), m_ghciTerminals.end(),
+		[=](CGhciTerminalPtrT& ptrGhci) -> bool { return (ptrGhci->GetHwnd() == hwnd || ptrGhci->GetParentHwnd() == hwnd); });
+
+	if (itr != m_ghciTerminals.end())
+	{
+		return (*itr)->WaitForResponse(eod, timeout, response);
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool CGhciTerminalManager::IsTextSelected(HWND hwnd)
 {
 	SGhciTerminalsT::const_iterator itr = std::find_if(m_ghciTerminals.begin(), m_ghciTerminals.end(),

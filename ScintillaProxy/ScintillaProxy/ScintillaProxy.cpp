@@ -193,6 +193,21 @@ void GhciTerminalSendCommand(HWND hwnd, char* cmd)
 	CGhciTerminalManager::Instance().SendCommand(hwnd, cmd);
 }
 
+void GhciTerminalSendCommandAsynch(HWND hwnd, const char* cmd, const char* sod, const char* eod)
+{
+	CGhciTerminalManager::Instance().SendCommandAsynch(hwnd, cmd, sod, eod);
+}
+
+BOOL GhciTerminalSendCommandSynch(HWND hwnd, const char* cmd, const char* eod, DWORD timeout, const char** response)
+{
+	return (BOOL)CGhciTerminalManager::Instance().SendCommandSynch(hwnd, cmd, eod, timeout, response);
+}
+
+BOOL GhciTerminalWaitForResponse(HWND hwnd, const char* eod, DWORD timeout, const char** response)
+{
+	return (BOOL)CGhciTerminalManager::Instance().WaitForResponse(hwnd, eod, timeout, response);
+}
+
 BOOL GhciTerminalIsTextSelected(HWND hwnd)
 {
 	return CGhciTerminalManager::Instance().IsTextSelected(hwnd);
@@ -246,9 +261,9 @@ void GhciSendCommand(int id, const char* cmd)
 	CGhciManager::Instance().SendCommand(id, cmd);
 }
 
-void GhciSendCommandAsynch(int id, const char* cmd, const char* eod)
+void GhciSendCommandAsynch(int id, const char* cmd, const char* sod, const char* eod)
 {
-	CGhciManager::Instance().SendCommandAsynch(id, cmd, eod);
+	CGhciManager::Instance().SendCommandAsynch(id, cmd, sod, eod);
 }
 
 BOOL GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** response)

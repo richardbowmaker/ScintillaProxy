@@ -15,7 +15,7 @@ CGhci::CGhci() :
 	m_handler(NULL),
 	m_handlerData(NULL),
 	m_outputReady(NULL),
-	m_synch(false)
+	m_mode(Echo)
 {
 	::ZeroMemory(&m_pi, sizeof(m_pi));
 	::ZeroMemory(&m_si, sizeof(m_si));
@@ -50,7 +50,7 @@ void CGhci::Uninitialise()
 	if (m_initialised)
 	{
 		m_handler = NULL;
-		m_synch = false;
+		m_mode = Echo;
 
 		if (m_outputReady)
 		{
@@ -114,11 +114,12 @@ void CGhci::SendCommand(const char* cmd)
 	WriteFile(m_hInputWrite, cmd1.c_str(), (DWORD)cmd1.size(), &nBytesWrote, NULL);
 }
 
-void CGhci::SendCommandAsynch(const char* cmd, const char* eod)
+void CGhci::SendCommandAsynch(const char* cmd, const char* sod, const char* eod)
 {
 	m_eod = eod;
+	m_sod = sod;
 	m_response.clear();
-	m_synch = false;
+	m_mode = AsynchStarted;
 	SendCommand(cmd);
 }
 
@@ -130,19 +131,16 @@ bool CGhci::SendCommandSynch(const char* cmd, const char* eod, DWORD timeout, co
 	m_output.clear();
 	::LeaveCriticalSection(&m_cs);
 	::ResetEvent(m_outputReady);
-	m_synch = true;
-
 	SendCommand(cmd);	
 	isok = WaitForResponse(eod, timeout, response);
-	m_synch = false;
+	m_mode = Echo;
 	return isok;
 }
 
 bool CGhci::WaitForResponse(const char* eod, DWORD timeout, const char** response)
 {
 	bool isok = false;
-	m_synch = true;
-
+	m_mode = Synch;
 	while (true)
 	{
 		DWORD res = ::WaitForSingleObject(m_outputReady, timeout);
@@ -165,15 +163,15 @@ bool CGhci::WaitForResponse(const char* eod, DWORD timeout, const char** respons
 			break;
 		}
 	}
-	m_synch = false;
+	m_mode = Echo;
 	return isok;
 }
 
-void CGhci::Notify(const char* text)
+void CGhci::Notify(EventT event, const char* text)
 {
 	if (m_handler)
 	{
-		m_handler(m_id, text, m_handlerData);
+		m_handler(m_id, event, text, m_handlerData);
 	}
 }
 
@@ -366,24 +364,44 @@ void CGhci::ReadAndHandleOutput()
 			if (nBytesRead > 0)
 			{
 				lpBuffer[nBytesRead] = 0;
-				if (m_synch)
+				switch (m_mode)
 				{
+				case Echo:
+					m_response += lpBuffer;
+					Notify(EventOutput, m_response.c_str());
+					m_response.clear();
+					break;
+				case Synch:
 					// for synchronised command
 					::EnterCriticalSection(&m_cs);
 					m_output += lpBuffer;
 					::LeaveCriticalSection(&m_cs);
 					::SetEvent(m_outputReady);
-				}
-				else
-				{
-					// for asynch command
+					break;
+				case AsynchStarted:
+					{
+						m_response += lpBuffer;
+						size_t n = m_response.find(m_sod, 0);
+						if (n != std::string::npos)
+						{
+							std::string s = m_response.substr(0, n);
+							m_response = m_response.substr(n);
+							Notify(EventOutput, m_response.c_str());
+							m_mode = AsynchWaitEod;
+						}
+					}
+					break;
+				case AsynchWaitEod:
 					m_response += lpBuffer;
 					if (m_response.find(m_eod, 0) != std::string::npos)
 					{
-						Notify(m_response.c_str());
+						Notify(EventAsynchOutput, m_response.c_str());
 						m_response.clear();
 						m_eod.clear();
+						m_sod.clear();
+						m_mode = Echo;
 					}
+					break;
 				}
 			}
 		}
@@ -395,7 +413,7 @@ void CGhci::ReadAndHandleOutput()
 			{
 				// GHCI has stopped unexpectedly
 				DWORD err = ::GetLastError();
-				Notify("GHCI terminated unexpectedly\n");
+				Notify(EventError, "GHCI terminated unexpectedly\n");
 				break;
 			}
 		}
