@@ -132,7 +132,7 @@ void CGhciTerminal::GhciEventHandler(int id, int event, const char* text, void* 
 		Notify(EventOutput, str);
 		break;
 	case CGhci::EventAsynchOutput:
-		Notify(EventOutput, str);
+		Notify(EventAsynchOutput, str);
 		break;
 	case CGhci::EventError:
 		Notify(EventOutput, str);

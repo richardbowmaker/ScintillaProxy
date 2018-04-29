@@ -91,7 +91,8 @@ private:
 		EventSelectionClear = 0x08,
 		EventClosed			= 0x10,
 		EventOutput			= 0x20,
-		EventInput			= 0x40
+		EventInput			= 0x40,
+		EventAsynchOutput   = 0x80
 	};
 };
 
