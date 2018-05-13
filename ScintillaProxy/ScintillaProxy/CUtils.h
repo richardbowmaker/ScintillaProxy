@@ -22,6 +22,7 @@ public:
 	static StringT ToStringT(const char* p);
 	static StringT ToStringT(const wchar_t* p);
 	static std::string ToChar(StringT& s);
+//	static std::string ToChar(const wchar_t* p);
 
 };
 

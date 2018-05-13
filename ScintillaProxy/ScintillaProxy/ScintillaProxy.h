@@ -55,6 +55,9 @@ extern "C"
 	SCINTILLAPROXY_API void __cdecl GhciSendCommandAsynch(int id, const char* cmd, const char* sod, const char* eod);
 	SCINTILLAPROXY_API BOOL __cdecl GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** response);
 	SCINTILLAPROXY_API BOOL __cdecl GhciWaitForResponse(int id, const char* eod, DWORD timeout, const char** response);
+
+	// file dialogs, moved here as they now crash in wxHaskell caused by a windows update
+	SCINTILLAPROXY_API int  __cdecl WinOpenFileDialog(HWND parent, const char* prompt, const char* dir, const char* filter, const char* filterName, int flags, const char** fileName);
 }
 
 // internal functions
