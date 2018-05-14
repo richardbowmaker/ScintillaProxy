@@ -318,5 +318,47 @@ int WinOpenFileDialog(HWND parent, const char* prompt, const char* dir, const ch
 	}
 }
 
+int WinSaveFileDialog(HWND parent, const char* prompt, const char* dir, const char* filter, const char* filterName, const char* defName, int flags, const char** fileName)
+{
+	OPENFILENAME ofn;
+	::ZeroMemory(&ofn, sizeof(ofn));
+
+	TCHAR buffFilter[500];
+	CUtils::StringT tf = CUtils::ToStringT(filter);
+	CUtils::StringT tfn = CUtils::ToStringT(filterName);
+	_tcsncpy_s(buffFilter, _countof(buffFilter), tfn.c_str(), tfn.size());
+	_tcsncpy_s(&buffFilter[tfn.size() + 1], _countof(buffFilter) - tfn.size() - 1, tf.c_str(), tf.size());
+	buffFilter[tf.size() + tfn.size() + 2] = 0;
+
+	// set up filename
+	TCHAR fileBuff[1000];
+	CUtils::StringT fn = CUtils::ToStringT(defName);
+	_tcscpy_s(fileBuff, _countof(fileBuff), fn.c_str());
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = parent;
+	ofn.lpstrFile = fileBuff;
+	ofn.nMaxFile = sizeof(fileBuff);
+	ofn.lpstrFilter = buffFilter;
+	ofn.lpstrInitialDir = CUtils::ToStringT(dir).c_str();
+	ofn.Flags = flags;
+
+	// return filename must be static as Haskell client will read it
+	static std::string fn1;
+	fn1.clear();
+
+	if (::GetSaveFileName(&ofn))
+	{
+		// convert TCHAR filename to char
+		fn1 = CUtils::ToChar(CUtils::StringT(ofn.lpstrFile));
+		*fileName = fn1.c_str();
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
 
 

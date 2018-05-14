@@ -56,8 +56,9 @@ extern "C"
 	SCINTILLAPROXY_API BOOL __cdecl GhciSendCommandSynch(int id, const char* cmd, const char* eod, DWORD timeout, const char** response);
 	SCINTILLAPROXY_API BOOL __cdecl GhciWaitForResponse(int id, const char* eod, DWORD timeout, const char** response);
 
-	// file dialogs, moved here as they now crash in wxHaskell caused by a windows update
+	// file dialogs, moved here as they now crash in wxHaskell caused by a windows update of 10/5/2018
 	SCINTILLAPROXY_API int  __cdecl WinOpenFileDialog(HWND parent, const char* prompt, const char* dir, const char* filter, const char* filterName, int flags, const char** fileName);
+	SCINTILLAPROXY_API int  __cdecl WinSaveFileDialog(HWND parent, const char* prompt, const char* dir, const char* filter, const char* filterName, const char* defName, int flags, const char** fileName);
 }
 
 // internal functions
