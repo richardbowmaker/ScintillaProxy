@@ -33,9 +33,6 @@
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\GhciManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaEditor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -46,6 +43,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GhciTerminalManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScintillaEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

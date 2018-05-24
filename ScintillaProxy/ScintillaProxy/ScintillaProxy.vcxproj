@@ -157,7 +157,7 @@
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\Ghci.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\GhciManager.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\GhciTerminal.h" />
-    <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaEditor.h" />
+    <ClInclude Include="ScintillaEditor.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaManager.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\ScintillaProxy.h" />
     <ClInclude Include="..\..\..\..\..\_Rick%27s\haskell\ScintillaProxy\ScintillaProxy\ScintillaProxy\stdafx.h" />
