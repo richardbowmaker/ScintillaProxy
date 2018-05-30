@@ -109,6 +109,7 @@ void CGhci::SendCommand(CUtils::StringT text)
 
 void CGhci::SendCommand(const char* cmd)
 {
+	m_mode = Echo;
 	DWORD nBytesWrote;
 	std::string cmd1 = std::string(cmd) + "\n";
 	WriteFile(m_hInputWrite, cmd1.c_str(), (DWORD)cmd1.size(), &nBytesWrote, NULL);

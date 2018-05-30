@@ -287,7 +287,7 @@ void CGhciTerminal::Notify(int event, CUtils::StringT text)
 		}
 			break;
 		default:
-			//m_notify(m_hwnd, event, NULL);
+			m_notify(m_hwnd, event, NULL);
 			break;
 		}
 	}
